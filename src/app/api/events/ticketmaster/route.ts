@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createApiResponse } from "@/app/dto/apiResponse";
 
 const TICKETMASTER_API_KEY = process.env.TICKETMASTER_API_KEY;
 const TICKETMASTER_BASE = "https://app.ticketmaster.com/discovery/v2/";
@@ -52,10 +53,35 @@ const transformTicketmasterEvent = (tmEvent: TicketmasterEvent) => {
   };
 };
 
-const fetchTicketmasterEvents = async () => {
+const fetchTicketmasterEvents = async ({
+  page,
+  lat,
+  lng,
+  radius,
+  keyword,
+  city,
+}: {
+  page?: string;
+  lat?: string;
+  lng?: string;
+  radius?: string;
+  keyword?: string;
+  city?: string;
+}) => {
+  console.log(lat, lng, 70);
+  const query = new URLSearchParams({
+    apikey: TICKETMASTER_API_KEY!,
+    latlong: `${lat},${lng}`,
+    radius: radius || "50",
+    page: String(page || 0),
+    keyword: keyword || "",
+    unit: "km",
+    sort: "date,asc",
+    city: city || "",
+  });
   try {
     const response = await fetch(
-      `${TICKETMASTER_BASE}events.json?apikey=${TICKETMASTER_API_KEY}`,
+      `${TICKETMASTER_BASE}events.json?apikey=${TICKETMASTER_API_KEY}&${query.toString()}`,
       {
         headers: {
           Accept: "application/json",
@@ -72,13 +98,23 @@ const fetchTicketmasterEvents = async () => {
 
     if (!data._embedded?.events) {
       console.log("No events found in Ticketmaster response");
-      return [];
+      return {
+        data: [],
+        totalPages: 0,
+      };
     }
 
-    return data._embedded.events.map(transformTicketmasterEvent);
+    const mappedEvents = data._embedded.events.map(transformTicketmasterEvent);
+    return {
+      data: mappedEvents,
+      totalPages: data.page.totalPages,
+    };
   } catch (error) {
     console.error("Error fetching Ticketmaster events:", error);
-    return [];
+    return {
+      data: [],
+      totalPages: 0,
+    };
   }
 };
 
@@ -86,31 +122,43 @@ const fetchTicketmasterEvents = async () => {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const city = searchParams.get("city") || "Melbourne";
-
-    console.log(`Fetching events for ${city}...`);
+    const page = String(searchParams.get("page"));
+    const lat = searchParams.get("lat")!;
+    const lng = searchParams.get("lng")!;
+    const radius = searchParams.get("radius") || "50";
+    const keyword = searchParams.get("keyword") || "";
+    const city = searchParams.get("city") || "";
 
     // Get Ticketmaster events
-    const ticketmasterEvents = await fetchTicketmasterEvents();
+    const { data, totalPages } = await fetchTicketmasterEvents({
+      page,
+      lat,
+      lng,
+      radius,
+      keyword,
+      city,
+    });
 
     // TODO: Later add user-created events from Supabase
     // const userEvents = await fetchUserEvents()
 
-    const allEvents = [
-      ...ticketmasterEvents,
-      // ...userEvents
-    ];
-
-    return NextResponse.json({
+    const response = createApiResponse({
       success: true,
-      events: allEvents,
-      total: allEvents.length,
+      data: {
+        data,
+        total: totalPages,
+      },
+      code: 200,
     });
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("API route error:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to fetch events" },
-      { status: 500 }
-    );
+    const response = createApiResponse({
+      success: false,
+      code: 500,
+      error: "failed to fetch events",
+    });
+    return NextResponse.json(response);
   }
 }

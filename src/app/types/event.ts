@@ -16,6 +16,7 @@ export interface Event {
   category: string;
   canEdit: boolean;
   canRegister: boolean;
+  url?: string;
 }
 
 export interface EventCardProps {

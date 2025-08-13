@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
-import { createApiResponse } from "@/app/dto/apiResponse";
-
-const TICKETMASTER_API_KEY = process.env.TICKETMASTER_API_KEY;
-const TICKETMASTER_BASE = "https://app.ticketmaster.com/discovery/v2/";
-
 import { TicketmasterEvent } from "@/app/types/event";
 
-const transformTicketmasterEvent = (tmEvent: TicketmasterEvent) => {
+const TM_KEY = process.env.TICKETMASTER_API_KEY!;
+const TM_BASE = "https://app.ticketmaster.com/discovery/v2";
+
+const transform = (tmEvent: TicketmasterEvent) => {
   const venue = tmEvent._embedded?.venues?.[0];
   const image =
     tmEvent.images?.find(
@@ -16,7 +14,7 @@ const transformTicketmasterEvent = (tmEvent: TicketmasterEvent) => {
 
   return {
     id: tmEvent.id,
-    source: "ticketmaster",
+    source: "ticketmaster" as const,
     name: tmEvent.name,
     description: tmEvent.info || tmEvent.pleaseNote || "",
     start:
@@ -30,7 +28,7 @@ const transformTicketmasterEvent = (tmEvent: TicketmasterEvent) => {
       name: venue?.name || "TBA",
       address: venue?.address?.line1
         ? `${venue.address.line1}, ${venue.city?.name}, ${venue.state?.stateCode}`
-        : venue?.city?.name || "Melbourne",
+        : venue?.city?.name || "",
       latitude: venue?.location?.latitude
         ? parseFloat(venue.location.latitude)
         : null,
@@ -53,112 +51,77 @@ const transformTicketmasterEvent = (tmEvent: TicketmasterEvent) => {
   };
 };
 
-const fetchTicketmasterEvents = async ({
-  page,
-  lat,
-  lng,
-  radius,
-  keyword,
-  city,
-}: {
-  page?: string;
-  lat?: string;
-  lng?: string;
-  radius?: string;
-  keyword?: string;
-  city?: string;
-}) => {
-  console.log(lat, lng, 70);
-  const query = new URLSearchParams({
-    apikey: TICKETMASTER_API_KEY!,
-    latlong: `${lat},${lng}`,
-    radius: radius || "50",
-    page: String(page || 0),
-    keyword: keyword || "",
-    unit: "km",
-    sort: "date,asc",
-    city: city || "",
-  });
+export async function GET(req: Request) {
   try {
-    const response = await fetch(
-      `${TICKETMASTER_BASE}events.json?apikey=${TICKETMASTER_API_KEY}&${query.toString()}`,
-      {
-        headers: {
-          Accept: "application/json",
-        },
-        next: { revalidate: 600 },
-      }
-    );
+    const { searchParams } = new URL(req.url);
 
-    if (!response.ok) {
-      throw new Error(`Ticketmaster API error: ${response.status}`);
+    const qp = new URLSearchParams();
+    qp.set("apikey", TM_KEY);
+
+    // pagination / sizing
+    const size = searchParams.get("size");
+    if (size) qp.set("size", size);
+    const page = searchParams.get("page");
+    if (page) qp.set("page", page);
+
+    // time window
+    const startDateTime = searchParams.get("startDateTime");
+    if (startDateTime) qp.set("startDateTime", startDateTime);
+    const endDateTime = searchParams.get("endDateTime");
+    if (endDateTime) qp.set("endDateTime", endDateTime);
+
+    // sorting
+    qp.set("sort", searchParams.get("sort") || "relevance,desc");
+
+    // filters
+    const countryCode = searchParams.get("countryCode");
+    if (countryCode) qp.set("countryCode", countryCode);
+
+    const keyword = searchParams.get("keyword");
+    if (keyword) qp.set("keyword", keyword);
+
+    const classificationName = searchParams.get("classificationName");
+    if (classificationName) qp.set("classificationName", classificationName);
+
+    const source = searchParams.get("source");
+    if (source) qp.set("source", source); // e.g. "ticketmaster"
+
+    // ✅ location by lat/lng (+radius)
+    const lat = searchParams.get("lat");
+    const lng = searchParams.get("lng");
+    if (lat && lng) {
+      qp.set("latlong", `${lat},${lng}`); // still supported
+      const radius = searchParams.get("radius") || "50";
+      qp.set("radius", radius);
+      qp.set("unit", searchParams.get("unit") || "km");
     }
 
-    const data = await response.json();
-
-    if (!data._embedded?.events) {
-      console.log("No events found in Ticketmaster response");
-      return {
-        data: [],
-        totalPages: 0,
-      };
-    }
-
-    const mappedEvents = data._embedded.events.map(transformTicketmasterEvent);
-    return {
-      data: mappedEvents,
-      totalPages: data.page.totalPages,
-    };
-  } catch (error) {
-    console.error("Error fetching Ticketmaster events:", error);
-    return {
-      data: [],
-      totalPages: 0,
-    };
-  }
-};
-
-// Main API route
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const page = String(searchParams.get("page"));
-    const lat = searchParams.get("lat")!;
-    const lng = searchParams.get("lng")!;
-    const radius = searchParams.get("radius") || "50";
-    const keyword = searchParams.get("keyword") || "";
-    const city = searchParams.get("city") || "";
-
-    // Get Ticketmaster events
-    const { data, totalPages } = await fetchTicketmasterEvents({
-      page,
-      lat,
-      lng,
-      radius,
-      keyword,
-      city,
+    const url = `${TM_BASE}/events.json?${qp.toString()}`;
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 300 },
     });
+    if (!res.ok) {
+      return NextResponse.json(
+        { success: false, error: `TM ${res.status}` },
+        { status: res.status }
+      );
+    }
 
-    // TODO: Later add user-created events from Supabase
-    // const userEvents = await fetchUserEvents()
+    const data = await res.json();
+    const raw = data?._embedded?.events ?? [];
+    const events = raw.map(transform);
+    const totalPages = data?.page?.totalPages ?? 0;
 
-    const response = createApiResponse({
+    return NextResponse.json({
       success: true,
-      data: {
-        data,
-        total: totalPages,
-      },
-      code: 200,
+      data: { data: events, total: totalPages },
     });
-
-    return NextResponse.json(response);
-  } catch (error) {
-    console.error("API route error:", error);
-    const response = createApiResponse({
-      success: false,
-      code: 500,
-      error: "failed to fetch events",
-    });
-    return NextResponse.json(response);
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json(
+      { success: false, error: "failed to fetch events" },
+      { status: 500 }
+    );
   }
 }

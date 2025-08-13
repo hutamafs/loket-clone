@@ -13,7 +13,7 @@ const quickTags = [
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b bg-[#0e3a8a] text-white">
+    <header className="fixed top-0 z-50 w-full border-b bg-[#0e3a8a] text-white">
       {/* top bar (desktop) */}
       <div className="hidden md:flex items-center justify-between px-4 lg:px-6 h-10 text-xs bg-[#0b2d6a]">
         <nav className="flex items-center gap-4 opacity-90">
@@ -47,11 +47,11 @@ export default function Header() {
       </div>
 
       {/* main bar */}
-      <div className="px-4 lg:px-6 py-3">
-        <div className="flex items-center gap-3">
+      <div className="px-2 sm:px-4 lg:px-6 py-2 md:py-3">
+        <div className="flex items-center gap-2 md:gap-3">
           {/* mobile hamburger via <details> (no JS) */}
           <details className="md:hidden">
-            <summary className="list-none p-2 -ml-1 rounded hover:bg-white/10 cursor-pointer">
+            <summary className="list-none p-1.5 -ml-1 rounded hover:bg-white/10 cursor-pointer">
               <span className="sr-only">Open menu</span>
               <svg
                 viewBox="0 0 24 24"
@@ -66,7 +66,7 @@ export default function Header() {
                 />
               </svg>
             </summary>
-            <div className="mt-2 space-y-2 text-sm">
+            <div className="absolute mt-2 p-3 bg-[#0e3a8a] border border-white/20 rounded shadow-lg space-y-2 text-sm z-50">
               <Link href="/create" className="block hover:underline">
                 Become an Event Creator
               </Link>
@@ -113,7 +113,7 @@ export default function Header() {
               name="keyword"
               aria-label="Search events"
               placeholder="Find exciting events here"
-              className="w-full h-11 pl-3 pr-3 rounded-md bg-white text-black placeholder:text-gray-500 outline-none focus:ring-4 ring-white/30"
+              className="w-full h-10 md:h-11 pl-3 pr-3 rounded-md bg-white text-black placeholder:text-gray-500 outline-none focus:ring-4 ring-white/30"
             />
             {/* <select
               name="city"
@@ -133,7 +133,7 @@ export default function Header() {
             </select> */}
             <button
               type="submit"
-              className="h-11 rounded bg-white text-[#0e3a8a] px-4 font-medium hover:bg-white/90"
+              className="h-10 md:h-11 rounded bg-white text-[#0e3a8a] px-4 font-medium hover:bg-white/90"
             >
               Search
             </button>
@@ -142,20 +142,20 @@ export default function Header() {
           {/* Mobile login shortcut */}
           <Link
             href="/sign-in"
-            className="md:hidden ml-auto rounded border border-white px-3 py-1.5 text-sm font-medium hover:bg-white/10"
+            className="md:hidden ml-auto rounded border border-white px-2.5 py-1 text-sm font-medium hover:bg-white/10"
           >
             Log in
           </Link>
         </div>
 
         {/* Quick tags (server links) */}
-        <div className="mt-3 -mb-1">
-          <div className="flex justify-center gap-2 overflow-x-auto scrollbar-none py-1">
+        <div className="mt-2 md:mt-3 -mb-1">
+          <div className="flex justify-start md:justify-center gap-1.5 md:gap-2 overflow-x-auto scrollbar-none py-1">
             {quickTags.map((t) => (
               <Link
                 key={t}
                 href={`/?keyword=${encodeURIComponent(t)}`}
-                className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 text-xs whitespace-nowrap"
+                className="px-2 md:px-3 py-1 md:py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 text-xs whitespace-nowrap"
               >
                 #{t}
               </Link>
@@ -166,13 +166,13 @@ export default function Header() {
         {/* Mobile search (also Server Action) */}
         <form
           action={searchEvents}
-          className="md:hidden mt-3 flex items-center gap-2"
+          className="md:hidden mt-2 flex items-center gap-1"
         >
           <input
             name="keyword"
             aria-label="Search events"
             placeholder="Find exciting events here"
-            className="w-full h-11 pl-3 pr-3 rounded-md bg-white text-black placeholder:text-gray-500 outline-none focus:ring-4 ring-white/30"
+            className="w-full h-9 pl-3 pr-3 rounded-md bg-white text-black placeholder:text-gray-500 outline-none focus:ring-4 ring-white/30 text-sm"
           />
           {/* <select
             name="city"
@@ -192,12 +192,14 @@ export default function Header() {
           </select> */}
           <button
             type="submit"
-            className="h-11 rounded bg-white text-[#0e3a8a] px-4 font-medium hover:bg-white/90"
+            className="h-9 rounded bg-white text-[#0e3a8a] px-3 font-medium hover:bg-white/90 text-sm"
           >
-            Go
+            Search
           </button>
         </form>
       </div>
+      {/* Add a spacer element to ensure proper scroll spacing on mobile */}
+      <div className="md:hidden h-1"></div>
     </header>
   );
 }

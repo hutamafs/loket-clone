@@ -53,7 +53,7 @@ export default function EventGrid({
         <EventCard
           key={`${event.source}-${event.id}`}
           event={event}
-          onRegister={onRegister}
+          // onRegister={onRegister}
         />
       ))}
     </div>

@@ -65,7 +65,7 @@ export default function LoketEventCard({
   return (
     <article className="snap-start h-[375px] w-[276px] md:w-[300px] shrink-0 rounded-2xl border bg-white overflow-hidden flex flex-col">
       <Link
-        href={e.url || "#"}
+        href={`/event/${e.id}`}
         target="_blank"
         className="block flex-grow overflow-hidden"
       >

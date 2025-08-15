@@ -10,5 +10,5 @@ export async function searchEvents(formData: FormData) {
   if (keyword) p.set("keyword", keyword);
   if (city) p.set("city", city); // or lat/lng later
 
-  redirect("/?" + p.toString());
+  redirect("/events?" + p.toString());
 }

@@ -1,228 +1,173 @@
-"use client";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback, useRef } from "react";
 import EventGrid from "@/components/event/EventGrid";
-import { Search, Filter, MapPin } from "lucide-react";
 import { Event } from "@/app/types/event";
 import { EventPagination } from "@/components/pagination/Pagination";
 import { cityCoordinates } from "@/constant/coordinates";
+import SidebarFilter from "@/components/event/SidebarFilter";
+import MobileFilterToggle from "@/components/event/MobileFilterToggle";
+import { createSearchParamsString } from "@/lib/event";
 
-export default function EventsPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [totalPages, setTotalPages] = useState(1);
-  const [q, setQ] = useState({
-    page: searchParams.get("page") || "0",
-    lat: searchParams.get("lat") || cityCoordinates["Melbourne"].lat,
-    lng: searchParams.get("lng") || cityCoordinates["Melbourne"].lng,
-    radius: searchParams.get("radius") || "50",
-    keyword: searchParams.get("keyword") || "",
+// Helper function to parse query params with defaults
+function getQueryParams(params: {
+  [key: string]: string | string[] | undefined;
+}) {
+  const defaults = {
+    page: "0",
     city: "Melbourne",
-  });
-  const shouldFetchRef = useRef(true);
-
-  const handlePageChange = (p: number) => {
-    const params = new URLSearchParams({
-      ...q,
-      page: String(p),
-      city: q.city,
-    }).toString();
-    router.push(`/events?${params}`);
-    setQ((prevState) => ({
-      ...prevState,
-      page: String(p),
-    }));
-    shouldFetchRef.current = true;
+    radius: "50",
+    keyword: "",
+    size: "8",
+    genreId: "",
+    venueId: "",
   };
 
-  // Fetch events from our API
-  const fetchEvents = useCallback(async (queryParams: typeof q) => {
-    const p = new URLSearchParams({
-      ...queryParams,
-      city: queryParams.city,
-    }).toString();
-    setError(null);
+  const city = typeof params.city === "string" ? params.city : defaults.city;
+  const lat =
+    typeof params.lat === "string"
+      ? params.lat
+      : cityCoordinates[city]?.lat || cityCoordinates[defaults.city].lat;
+  const lng =
+    typeof params.lng === "string"
+      ? params.lng
+      : cityCoordinates[city]?.lng || cityCoordinates[defaults.city].lng;
 
-    try {
-      const params = new URLSearchParams(p).toString();
-      const apiResp = await fetch(`/api/events/ticketmaster?${params}`);
-      const res = await apiResp.json();
+  const getParam = (key: keyof typeof defaults) =>
+    typeof params[key] === "string" ? params[key] : defaults[key];
 
-      if (res.success) {
-        setEvents(res.data.data);
-        setTotalPages(res.total);
-      } else {
-        setError(res.error || "Failed to load events");
+  const classificationId = Array.isArray(params.classificationId)
+    ? params.classificationId
+    : typeof params.classificationId === "string"
+    ? [params.classificationId]
+    : [];
+
+  return {
+    page: getParam("page"),
+    lat,
+    lng,
+    radius: getParam("radius"),
+    keyword: getParam("keyword"),
+    city,
+    size: getParam("size"),
+    classificationId,
+    genreId: getParam("genreId"),
+    venueId: getParam("venueId"),
+  };
+}
+
+async function fetchEventData(params: Record<string, string | string[]>) {
+  try {
+    // Create URLSearchParams manually to handle arrays
+    const searchParams = new URLSearchParams();
+
+    // Add all non-array parameters
+    Object.entries(params).forEach(([key, value]) => {
+      if (key !== "classificationId") {
+        searchParams.append(key, value as string);
       }
-    } catch (err) {
-      console.error("Error fetching events:", err);
-      setError("Network error - please try again");
-    } finally {
-      setLoading(false);
+    });
+
+    // Add each classificationId separately for arrays
+    if (Array.isArray(params.classificationId)) {
+      params.classificationId.forEach((id) => {
+        if (id) searchParams.append("classificationId", id);
+      });
     }
-  }, []);
 
-  // Handle URL search params changes (back/forward navigation, initial load)
-  useEffect(() => {
-    const page = searchParams.get("page") || "0";
-    const lat = searchParams.get("lat") || cityCoordinates["Melbourne"].lat;
-    const lng = searchParams.get("lng") || cityCoordinates["Melbourne"].lng;
-    const radius = searchParams.get("radius") || "50";
-    const keyword = searchParams.get("keyword") || "";
+    const queryString = searchParams.toString();
+    // Use absolute URL for server-side fetch
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const apiResp = await fetch(
+      `${baseUrl}/api/events/ticketmaster?${queryString}`,
+      { next: { revalidate: 60 } }
+    );
 
-    console.log("URL params changed:", { page, lat, lng, radius, keyword });
-
-    setQ((prev) => ({
-      ...prev,
-      page,
-      lat,
-      lng,
-      radius,
-      keyword,
-    }));
-
-    // Always fetch when URL changes
-    shouldFetchRef.current = true;
-  }, [searchParams]);
-
-  // Only fetch when shouldFetchRef is true
-  useEffect(() => {
-    if (shouldFetchRef.current) {
-      console.log("Fetching with params:", q);
-      fetchEvents(q);
-      shouldFetchRef.current = false;
+    if (!apiResp.ok) {
+      throw new Error(`API responded with status: ${apiResp.status}`);
     }
-  }, [q, fetchEvents]);
 
-  // Handle event registration (placeholder)
-  const handleEventRegister = async (eventId: string) => {
-    console.log("Registering for event:", eventId);
-    // TODO: Implement registration logic
-    alert(`Registration for event ${eventId} - Coming soon!`);
-  };
+    const res = await apiResp.json();
 
-  const handleSelectChange = (value: string) => {
-    setQ((prev) => ({
-      ...prev,
-      city: value,
-    }));
-    const params = new URLSearchParams({
-      ...q,
-      lat: cityCoordinates[value].lat,
-      lng: cityCoordinates[value].lng,
-      city: value,
-    }).toString();
-    router.push(`/events?${params}`);
-  };
+    if (!res.success) {
+      throw new Error(res.error || "Failed to load events");
+    }
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    shouldFetchRef.current = true;
-    // Include keyword in URL params
-    const params = new URLSearchParams({ ...q }).toString();
-    router.push(`/events?${params}`);
-  };
+    return {
+      events: res.data.data as Event[],
+      totalPages: res.data.total as number,
+      error: null,
+    };
+  } catch (err) {
+    console.error("Error fetching events:", err);
+    return {
+      events: [],
+      totalPages: 1,
+      error:
+        err instanceof Error ? err.message : "Network error - please try again",
+    };
+  }
+}
 
-  const handleKeywordChange = (keyword: string) => {
-    setQ((prevState) => ({
-      ...prevState,
-      keyword,
-    }));
-  };
+// Server component to fetch event data
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  // Ensure searchParams is properly awaited to fix the warning
+  const awaitedSearchParams = await Promise.resolve(searchParams);
+  const queryParams = getQueryParams(awaitedSearchParams);
+  const { events, totalPages, error } = await fetchEventData(queryParams);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Events in {q.city}
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Discover amazing events happening near you
-              </p>
-            </div>
+    <div className="min-h-screen bg-white">
+      <div className="flex flex-col md:flex-row p-4 md:p-10 relative">
+        {/* Mobile Filter Toggle Button */}
+        <MobileFilterToggle />
 
-            {/* City Selector */}
-            <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-gray-400" />
-              <select
-                value={q.city}
-                onChange={(e) => handleSelectChange(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {Object.keys(cityCoordinates).map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          {/* Search Bar */}
-          <div className="relative flex-1">
-            <form onSubmit={handleSubmit}>
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search events, venues, or categories..."
-                value={q.keyword}
-                onChange={(e) => handleKeywordChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </form>
-          </div>
-
-          {/* Filter Button */}
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-            <Filter className="h-5 w-5" />
-            <span>Filters</span>
-          </button>
+        {/* Sidebar Filter - Hidden on mobile by default */}
+        <div id="sidebar-container" className="hidden md:block md:w-64 lg:w-72">
+          <SidebarFilter />
         </div>
 
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-            <div className="text-red-800">
-              <h3 className="font-medium">Error loading events</h3>
-              <p className="text-sm mt-1">{error}</p>
-              <button
-                onClick={() => {
-                  shouldFetchRef.current = true;
-                  fetchEvents(q);
-                }}
-                className="mt-2 text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded transition-colors"
-              >
-                Try Again
-              </button>
+        {/* Main Content */}
+        <main className="flex flex-col items-center md:flex-1 md:item-start">
+          {/* Error */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+              <div className="text-red-800">
+                <h3 className="font-medium">Error loading events</h3>
+                <p className="text-sm mt-1">{error}</p>
+                <a
+                  href={`/events?${createSearchParamsString(queryParams)}`}
+                  className="mt-2 text-sm bg-red-100 hover:bg-red-200 px-3 py-1 rounded inline-block"
+                >
+                  Try Again
+                </a>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Events Grid */}
-        <EventGrid
-          events={events}
-          loading={loading}
-          onRegister={handleEventRegister}
-        />
-        {events.length > 0 && (
-          <EventPagination
-            page={Number(q.page)}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
+          {/* Event Grid */}
+          <EventGrid
+            events={events}
+            loading={false} // Not needed in server component
+            // onRegister={handleEventRegister}
           />
-        )}
+
+          {/* Pagination */}
+          {events.length > 0 && (
+            <EventPagination
+              page={Number(queryParams.page)}
+              totalPages={totalPages}
+              onPageChange={undefined} // This will be handled client-side with links
+              currentQueryParams={Object.fromEntries(
+                Object.entries(queryParams).map(([k, v]) => [
+                  k,
+                  Array.isArray(v) ? v.join(",") : v,
+                ])
+              )}
+            />
+          )}
+        </main>
       </div>
     </div>
   );

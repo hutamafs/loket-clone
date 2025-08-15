@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 const TM_KEY = process.env.TICKETMASTER_API_KEY!;
-const TM_BASE = "https://app.ticketmaster.com/discovery/v2";
 
 import { TicketmasterEvent } from "@/app/types/event";
 
@@ -56,7 +55,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const url = `${TM_BASE}/events/${params.id}.json?apikey=${TM_KEY}`;
+    const url = `${process.env.TICKETMASTER_API_URL}/events/${params.id}.json?apikey=${TM_KEY}`;
     const res = await fetch(url, {
       headers: { Accept: "application/json" },
       next: { revalidate: 300 },

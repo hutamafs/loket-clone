@@ -1,55 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Event as EventInterface } from "@/app/types/event";
-
-export type UEvent = {
-  id: string;
-  source: "ticketmaster" | string;
-  name: string;
-  description?: string;
-  start?: string | null; // ISO
-  end?: string | null;
-  image?: string | null;
-  venue?: { name?: string; address?: string | null };
-  price?: {
-    min?: number | null;
-    max?: number | null;
-    currency?: string;
-    display?: string;
-  };
-  category?: string;
-  url?: string;
-  canRegister?: boolean;
-};
-
-function fmtDate(iso?: string | null) {
-  if (!iso) return "Date TBA";
-  try {
-    return new Intl.DateTimeFormat("en-AU", {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return "Date TBA";
-  }
-}
-
-function fmtPrice(p?: UEvent["price"]) {
-  if (!p) return "Price TBA";
-  if (p.display && p.display.trim().length) return p.display;
-  if (p.min && p.min > 0) {
-    return new Intl.NumberFormat("en-AU", {
-      style: "currency",
-      currency: p.currency || "AUD",
-      maximumFractionDigits: 0,
-    }).format(p.min);
-  }
-  return "Price TBA";
-}
+import { fmtDate, fmtPrice } from "@/lib/transformTmObj";
 
 export default function LoketEventCard({
   event: e,
@@ -63,7 +15,7 @@ export default function LoketEventCard({
   const venue = e.venue?.name || "Venue TBA";
 
   return (
-    <article className="snap-start h-[375px] w-[276px] md:w-[300px] shrink-0 rounded-2xl border bg-white overflow-hidden flex flex-col">
+    <article className="snap-start md:h-[375px] w-full md:w-[276px] shrink-0 rounded-2xl border bg-white overflow-hidden flex flex-col">
       <Link
         href={`/event/${e.id}`}
         target="_blank"
@@ -84,7 +36,7 @@ export default function LoketEventCard({
         </div>
 
         {/* Body */}
-        <div className="p-4 space-y-2 flex-grow">
+        <div className="p-4 space-y-2 md:flex-grow">
           <h3 className="font-semibold leading-snug line-clamp-2">{e.name}</h3>
           <p className="text-sm text-gray-600">{date}</p>
           <p className="text-sm font-medium">{price}</p>

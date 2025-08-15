@@ -47,6 +47,7 @@ export default async function Home() {
 
   // Optional: simple de-dup so the same event doesn't appear twice
   const seen = new Set<string>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dedupe = (arr: any[]) =>
     arr.filter((e) => (seen.has(e.id) ? false : (seen.add(e.id), true)));
   const featuredDeduped = dedupe(featuredMelbourne);

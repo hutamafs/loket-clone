@@ -5,7 +5,6 @@ import {
   Palette,
   Briefcase,
   BookOpen,
-  Mic,
   ImageIcon,
   Ticket,
 } from "lucide-react"; // icons
@@ -17,7 +16,7 @@ type Cat = {
   Icon: React.ComponentType<{ size?: number; className?: string }>;
 };
 
-const CATS: Cat[] = [
+export const CATS: Cat[] = [
   {
     label: "Festival, Fair, Bazaar",
     tmClassification: "Festival",
@@ -53,12 +52,6 @@ const CATS: Cat[] = [
     tmClassification: "Education",
     img: "/categories/workshop.png",
     Icon: BookOpen,
-  },
-  {
-    label: "Show / Performance",
-    tmClassification: "Arts & Theatre",
-    img: "/categories/show.png",
-    Icon: Mic,
   },
   {
     label: "Attraction / Theme Park",

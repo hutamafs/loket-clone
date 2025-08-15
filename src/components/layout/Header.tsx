@@ -115,22 +115,6 @@ export default function Header() {
               placeholder="Find exciting events here"
               className="w-full h-10 md:h-11 pl-3 pr-3 rounded-md bg-white text-black placeholder:text-gray-500 outline-none focus:ring-4 ring-white/30"
             />
-            {/* <select
-              name="city"
-              className="h-11 rounded-md bg-white text-black px-2 outline-none focus:ring-4 ring-white/30"
-              defaultValue=""
-              aria-label="Choose city"
-            >
-              <option value="" disabled>
-                City
-              </option>
-              <option value="Melbourne">Melbourne</option>
-              <option value="Sydney">Sydney</option>
-              <option value="Jakarta">Jakarta</option>
-              <option value="Bandung">Bandung</option>
-              <option value="Bali">Bali</option>
-              <option value="Surabaya">Surabaya</option>
-            </select> */}
             <button
               type="submit"
               className="h-10 md:h-11 rounded bg-white text-[#0e3a8a] px-4 font-medium hover:bg-white/90"
@@ -154,7 +138,7 @@ export default function Header() {
             {quickTags.map((t) => (
               <Link
                 key={t}
-                href={`/?keyword=${encodeURIComponent(t)}`}
+                href={`/events?keyword=${encodeURIComponent(t)}`}
                 className="px-2 md:px-3 py-1 md:py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 text-xs whitespace-nowrap"
               >
                 #{t}
@@ -163,7 +147,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile search (also Server Action) */}
+        {/* mobile search */}
         <form
           action={searchEvents}
           className="md:hidden mt-2 flex items-center gap-1"

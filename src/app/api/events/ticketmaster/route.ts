@@ -1,55 +1,8 @@
 import { NextResponse } from "next/server";
-import { TicketmasterEvent } from "@/app/types/event";
+import { transform } from "@/lib/transformTmObj";
 
 const TM_KEY = process.env.TICKETMASTER_API_KEY!;
-const TM_BASE = "https://app.ticketmaster.com/discovery/v2";
-
-const transform = (tmEvent: TicketmasterEvent) => {
-  const venue = tmEvent._embedded?.venues?.[0];
-  const image =
-    tmEvent.images?.find(
-      (img) => typeof img.width === "number" && img.width > 300
-    ) || tmEvent.images?.[0];
-  const priceRange = tmEvent.priceRanges?.[0];
-
-  return {
-    id: tmEvent.id,
-    source: "ticketmaster" as const,
-    name: tmEvent.name,
-    description: tmEvent.info || tmEvent.pleaseNote || "",
-    start:
-      tmEvent.dates?.start?.dateTime ||
-      `${tmEvent.dates?.start?.localDate}T${
-        tmEvent.dates?.start?.localTime || "19:00:00"
-      }`,
-    end: tmEvent.dates?.end?.dateTime || null,
-    image: image?.url || "/placeholder-event.jpg",
-    venue: {
-      name: venue?.name || "TBA",
-      address: venue?.address?.line1
-        ? `${venue.address.line1}, ${venue.city?.name}, ${venue.state?.stateCode}`
-        : venue?.city?.name || "",
-      latitude: venue?.location?.latitude
-        ? parseFloat(venue.location.latitude)
-        : null,
-      longitude: venue?.location?.longitude
-        ? parseFloat(venue.location.longitude)
-        : null,
-    },
-    price: {
-      min: priceRange?.min || 0,
-      max: priceRange?.max || 0,
-      currency: priceRange?.currency || "AUD",
-      display: priceRange
-        ? `$${priceRange.min} - $${priceRange.max}`
-        : "Price TBA",
-    },
-    category: tmEvent.classifications?.[0]?.segment?.name || "Entertainment",
-    url: tmEvent.url,
-    canEdit: false,
-    canRegister: true,
-  };
-};
+const TM_BASE = process.env.TICKETMASTER_API_URL!;
 
 export async function GET(req: Request) {
   try {
@@ -83,10 +36,20 @@ export async function GET(req: Request) {
     const classificationName = searchParams.get("classificationName");
     if (classificationName) qp.set("classificationName", classificationName);
 
+    // Handle classificationId as an array
+    const classificationIds = searchParams.getAll("classificationId");
+    if (classificationIds.length > 0) {
+      qp.set("classificationId", classificationIds.join(","));
+    }
+
+    // Handle venueId
+    const venueId = searchParams.get("venueId");
+    if (venueId) qp.set("venueId", venueId);
+
     const source = searchParams.get("source");
     if (source) qp.set("source", source); // e.g. "ticketmaster"
 
-    // ✅ location by lat/lng (+radius)
+    // location by lat/lng (+radius)
     const lat = searchParams.get("lat");
     const lng = searchParams.get("lng");
     if (lat && lng) {

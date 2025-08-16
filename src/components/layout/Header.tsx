@@ -14,38 +14,6 @@ const quickTags = [
 export default function Header() {
   return (
     <header className="fixed top-0 z-50 w-full border-b bg-[#0e3a8a] text-white">
-      {/* top bar (desktop) */}
-      <div className="hidden md:flex items-center justify-between px-4 lg:px-6 h-10 text-xs bg-[#0b2d6a]">
-        <nav className="flex items-center gap-4 opacity-90">
-          <Link href="/create" className="hover:underline">
-            Become an Event Creator
-          </Link>
-          <Link href="/pricing" className="hover:underline">
-            Pricing
-          </Link>
-          {/* <Link href="/blog" className="hover:underline">
-            Blog
-          </Link>
-          <Link href="/help" className="hover:underline">
-            Help Center
-          </Link> */}
-        </nav>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/sign-up"
-            className="rounded bg-white text-[#0e3a8a] px-3 py-1.5 font-medium"
-          >
-            Sign up
-          </Link>
-          <Link
-            href="/sign-in"
-            className="rounded border border-white px-3 py-1.5 font-medium hover:bg-white/10"
-          >
-            Log in
-          </Link>
-        </div>
-      </div>
-
       {/* main bar */}
       <div className="px-2 sm:px-4 lg:px-6 py-2 md:py-3">
         <div className="flex items-center gap-2 md:gap-3">
@@ -67,32 +35,25 @@ export default function Header() {
               </svg>
             </summary>
             <div className="absolute mt-2 p-3 bg-[#0e3a8a] border border-white/20 rounded shadow-lg space-y-2 text-sm z-50">
-              <Link href="/create" className="block hover:underline">
-                Become an Event Creator
-              </Link>
-              <Link href="/pricing" className="block hover:underline">
-                Pricing
-              </Link>
-              {/* <Link href="/blog" className="block hover:underline">
-                Blog
-              </Link>
-              <Link href="/help" className="block hover:underline">
-                Help Center
-              </Link> */}
-              <div className="flex gap-2 pt-1">
-                <Link
-                  href="/sign-up"
-                  className="flex-1 text-center rounded bg-white text-[#0e3a8a] px-3 py-2 font-medium"
+              <Link
+                href="/events"
+                className="flex items-center gap-2 hover:underline font-medium py-1"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  Sign up
-                </Link>
-                <Link
-                  href="/sign-in"
-                  className="flex-1 text-center rounded border border-white px-3 py-2 font-medium hover:bg-white/10"
-                >
-                  Log in
-                </Link>
-              </div>
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                </svg>
+                Events
+              </Link>
             </div>
           </details>
 
@@ -105,23 +66,61 @@ export default function Header() {
           </Link>
 
           {/* Desktop search (Server Action) */}
-          <form
-            action={searchEvents}
-            className="hidden md:flex items-center gap-2 flex-1 max-w-3xl mx-auto"
-          >
-            <input
-              name="keyword"
-              aria-label="Search events"
-              placeholder="Find exciting events here"
-              className="w-full h-10 md:h-11 pl-3 pr-3 rounded-md bg-white text-black placeholder:text-gray-500 outline-none focus:ring-4 ring-white/30"
-            />
-            <button
-              type="submit"
-              className="h-10 md:h-11 rounded bg-white text-[#0e3a8a] px-4 font-medium hover:bg-white/90"
+          <div className="hidden md:flex items-center gap-2 flex-1 max-w-3xl mx-auto">
+            <form
+              action={searchEvents}
+              className="hidden md:flex items-center gap-2 flex-1 max-w-3xl mx-auto"
             >
-              Search
-            </button>
-          </form>
+              <input
+                name="keyword"
+                aria-label="Search events"
+                placeholder="Find exciting events here"
+                className="w-full h-10 md:h-11 pl-3 pr-3 rounded-md bg-white text-black placeholder:text-gray-500 outline-none focus:ring-4 ring-white/30"
+              />
+              <button
+                type="submit"
+                className="h-10 md:h-11 rounded bg-white text-[#0e3a8a] px-4 font-medium hover:bg-white/90"
+              >
+                Search
+              </button>
+            </form>
+          </div>
+
+          {/* Events Link with Compass Icon for Desktop */}
+          <Link
+            href="/events"
+            className="hidden md:flex items-center gap-1.5 hover:underline font-medium"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+            </svg>
+            Events
+          </Link>
+
+          <div className="hidden md:flex items-center gap-2">
+            <Link
+              href="/sign-up"
+              className="rounded bg-white text-[#0e3a8a] px-3 py-1.5 font-medium"
+            >
+              Sign up
+            </Link>
+            <Link
+              href="/sign-in"
+              className="rounded border border-white px-3 py-1.5 font-medium hover:bg-white/10"
+            >
+              Log in
+            </Link>
+          </div>
 
           {/* Mobile login shortcut */}
           <Link

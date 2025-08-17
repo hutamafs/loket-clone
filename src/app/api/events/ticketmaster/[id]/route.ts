@@ -52,10 +52,13 @@ function transform(tm: TicketmasterEvent) {
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const url = `${process.env.TICKETMASTER_API_URL}/events/${params.id}.json?apikey=${TM_KEY}`;
+    // Await the params promise to get the actual values
+    const { id } = await params;
+
+    const url = `${process.env.TICKETMASTER_API_URL}/events/${id}.json?apikey=${TM_KEY}`;
     const res = await fetch(url, {
       headers: { Accept: "application/json" },
       next: { revalidate: 300 },

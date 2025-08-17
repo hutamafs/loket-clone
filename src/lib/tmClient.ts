@@ -1,6 +1,6 @@
 // lib/tmClient.ts
 import { Event as EventItem } from "@/app/types/event";
-const base = "http://localhost:3000";
+const base = process.env.NEXT_PUBLIC_BASE_URL;
 
 export const revalidate = 0;
 

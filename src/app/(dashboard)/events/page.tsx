@@ -12,7 +12,7 @@ function getQueryParams(params: {
 }) {
   const defaults = {
     page: "0",
-    city: "Melbourne",
+    city: "",
     radius: "50",
     keyword: "",
     size: "8",
@@ -20,14 +20,31 @@ function getQueryParams(params: {
     venueId: "",
   };
 
-  const city = typeof params.city === "string" ? params.city : defaults.city;
+  // const city = typeof params.city === "string" ? params.city : defaults.city;
+  // const lat =
+  //   typeof params.lat === "string"
+  //     ? params.lat
+  //     : city === ""
+  //     ? ""
+  //     : cityCoordinates[city]?.lat || cityCoordinates[defaults.city].lat;
+  // const lng =
+  //   typeof params.lng === "string"
+  //     ? params.lng
+  //     : city === ""
+  //     ? ""
+  //     : cityCoordinates[city]?.lng || cityC
+  const city = typeof params.city === "string" ? params.city : "";
   const lat =
     typeof params.lat === "string"
       ? params.lat
+      : city === ""
+      ? ""
       : cityCoordinates[city]?.lat || cityCoordinates[defaults.city].lat;
   const lng =
     typeof params.lng === "string"
       ? params.lng
+      : city === ""
+      ? ""
       : cityCoordinates[city]?.lng || cityCoordinates[defaults.city].lng;
 
   const getParam = (key: keyof typeof defaults) =>
@@ -39,6 +56,13 @@ function getQueryParams(params: {
     ? [params.classificationId]
     : [];
 
+  // Handle genreId as an array
+  const genreId = Array.isArray(params.genreId)
+    ? params.genreId
+    : typeof params.genreId === "string"
+    ? [params.genreId]
+    : [];
+
   return {
     page: getParam("page"),
     lat,
@@ -48,7 +72,7 @@ function getQueryParams(params: {
     city,
     size: getParam("size"),
     classificationId,
-    genreId: getParam("genreId"),
+    genreId,
     venueId: getParam("venueId"),
   };
 }
@@ -60,7 +84,7 @@ async function fetchEventData(params: Record<string, string | string[]>) {
 
     // Add all non-array parameters
     Object.entries(params).forEach(([key, value]) => {
-      if (key !== "classificationId") {
+      if (key !== "classificationId" && key !== "genreId") {
         searchParams.append(key, value as string);
       }
     });
@@ -69,6 +93,13 @@ async function fetchEventData(params: Record<string, string | string[]>) {
     if (Array.isArray(params.classificationId)) {
       params.classificationId.forEach((id) => {
         if (id) searchParams.append("classificationId", id);
+      });
+    }
+
+    // Add each genreId separately for arrays
+    if (Array.isArray(params.genreId)) {
+      params.genreId.forEach((id) => {
+        if (id) searchParams.append("genreId", id);
       });
     }
 
@@ -106,20 +137,22 @@ async function fetchEventData(params: Record<string, string | string[]>) {
   }
 }
 
-// Server component to fetch event data
+// Server component to fetch event data - now async and awaits searchParams
 export default async function EventsPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Ensure searchParams is properly awaited to fix the warning
-  const awaitedSearchParams = await Promise.resolve(searchParams);
-  const queryParams = getQueryParams(awaitedSearchParams);
+  // Await the searchParams promise
+  const resolvedSearchParams = await searchParams;
+  const queryParams = getQueryParams(resolvedSearchParams);
+
+  // Fetch data directly in the main component
   const { events, totalPages, error } = await fetchEventData(queryParams);
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="flex flex-col md:flex-row p-4 md:p-10 relative">
+    <div className="min-h-screen bg-white pt-[145px] md:pt-[186px]">
+      <div className="flex flex-col md:flex-row px-4 md:px-10 py-4 md:py-8 relative">
         {/* Mobile Filter Toggle Button */}
         <MobileFilterToggle />
 
@@ -129,7 +162,7 @@ export default async function EventsPage({
         </div>
 
         {/* Main Content */}
-        <main className="flex flex-col items-center md:flex-1 md:item-start">
+        <main className="flex flex-col items-center w-full md:flex-1 md:items-start">
           {/* Error */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
@@ -147,18 +180,14 @@ export default async function EventsPage({
           )}
 
           {/* Event Grid */}
-          <EventGrid
-            events={events}
-            loading={false} // Not needed in server component
-            // onRegister={handleEventRegister}
-          />
+          <EventGrid events={events} loading={false} />
 
           {/* Pagination */}
           {events.length > 0 && (
             <EventPagination
               page={Number(queryParams.page)}
               totalPages={totalPages}
-              onPageChange={undefined} // This will be handled client-side with links
+              onPageChange={undefined}
               currentQueryParams={Object.fromEntries(
                 Object.entries(queryParams).map(([k, v]) => [
                   k,

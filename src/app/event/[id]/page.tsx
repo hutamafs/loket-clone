@@ -11,9 +11,10 @@ const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 export default async function EventPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const res = await fetch(`${base}/api/events/ticketmaster/${params.id}`, {
+  const { id } = await params;
+  const res = await fetch(`${base}/api/events/ticketmaster/${id}`, {
     cache: "no-store",
   });
   if (!res.ok) notFound();

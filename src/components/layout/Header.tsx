@@ -107,7 +107,9 @@ export default function Header() {
             Events
           </Link>
 
-          <div className="hidden md:flex items-center gap-2">
+          {/* code below is going to be comment out once the feature is ready */}
+
+          {/* <div className="hidden md:flex items-center gap-2">
             <Link
               href="/sign-up"
               className="rounded bg-white text-[#0e3a8a] px-3 py-1.5 font-medium"
@@ -120,7 +122,7 @@ export default function Header() {
             >
               Log in
             </Link>
-          </div>
+          </div> */}
 
           {/* Mobile login shortcut */}
           <Link

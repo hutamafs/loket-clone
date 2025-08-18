@@ -12,7 +12,7 @@ function getQueryParams(params: {
 }) {
   const defaults = {
     page: "0",
-    city: "Melbourne",
+    city: "",
     radius: "50",
     keyword: "",
     size: "8",
@@ -20,14 +20,31 @@ function getQueryParams(params: {
     venueId: "",
   };
 
-  const city = typeof params.city === "string" ? params.city : defaults.city;
+  // const city = typeof params.city === "string" ? params.city : defaults.city;
+  // const lat =
+  //   typeof params.lat === "string"
+  //     ? params.lat
+  //     : city === ""
+  //     ? ""
+  //     : cityCoordinates[city]?.lat || cityCoordinates[defaults.city].lat;
+  // const lng =
+  //   typeof params.lng === "string"
+  //     ? params.lng
+  //     : city === ""
+  //     ? ""
+  //     : cityCoordinates[city]?.lng || cityC
+  const city = typeof params.city === "string" ? params.city : "";
   const lat =
     typeof params.lat === "string"
       ? params.lat
+      : city === ""
+      ? ""
       : cityCoordinates[city]?.lat || cityCoordinates[defaults.city].lat;
   const lng =
     typeof params.lng === "string"
       ? params.lng
+      : city === ""
+      ? ""
       : cityCoordinates[city]?.lng || cityCoordinates[defaults.city].lng;
 
   const getParam = (key: keyof typeof defaults) =>

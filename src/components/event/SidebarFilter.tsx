@@ -28,7 +28,7 @@ export default function SidebarFilter() {
 
   // Get current query parameters
   const getQueryParams = useCallback(() => {
-    const city = searchParams.get("city") || "Melbourne";
+    const city = searchParams.get("city") || "";
 
     // Handle multiple classificationIds
     const classificationIds = searchParams
@@ -37,8 +37,8 @@ export default function SidebarFilter() {
 
     return {
       page: searchParams.get("page") || "0",
-      lat: searchParams.get("lat") || cityCoordinates[city].lat,
-      lng: searchParams.get("lng") || cityCoordinates[city].lng,
+      lat: searchParams.get("lat") || "",
+      lng: searchParams.get("lng") || "",
       radius: searchParams.get("radius") || "50",
       keyword: searchParams.get("keyword") || "",
       city: city,
@@ -170,6 +170,7 @@ export default function SidebarFilter() {
 
         const classificationsData = await classificationsRes.json();
         const venuesData = await venuesRes.json();
+        console.log(classificationsData.data);
 
         setOptions({
           classifications: classificationsData.data || [],
@@ -211,9 +212,12 @@ export default function SidebarFilter() {
   const handleResetFilters = useCallback(() => {
     // Preserve only the essential parameters
     const params = new URLSearchParams();
-    params.set("city", "Melbourne"); // Default city
-    params.set("lat", cityCoordinates["Melbourne"].lat);
-    params.set("lng", cityCoordinates["Melbourne"].lng);
+    // params.set("city", "Melbourne");
+    // params.set("lat", cityCoordinates["Melbourne"].lat);
+    // params.set("lng", cityCoordinates["Melbourne"].lng);
+    params.set("city", "");
+    params.set("lat", "");
+    params.set("lng", "");
     params.set("page", "0");
 
     // Preserve keyword if it exists

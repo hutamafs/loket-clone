@@ -1,63 +1,64 @@
 import Image from "next/image";
-import {
-  Music,
-  Trophy,
-  Palette,
-  Briefcase,
-  BookOpen,
-  ImageIcon,
-  Ticket,
-} from "lucide-react"; // icons
 
 type Cat = {
   label: string; // English label
   tmClassification: string;
   img: string;
-  Icon: React.ComponentType<{ size?: number; className?: string }>;
+};
+
+export const categoryImages: Record<string, string> = {
+  Music: "/images/categories/music.png",
+  Sports: "/images/categories/sports.png",
+  "Arts & Theatre": "/images/categories/theatre.png",
+  Film: "/images/categories/film.png",
+  "Festival, Fair, Bazaar": "/images/categories/festival.png",
+  "Exhibition, Expo": "/images/categories/expo.png",
+  Conference: "/images/categories/conference.png",
+  Workshop: "/images/categories/workshop.png",
+  Family: "/images/categories/family.png",
+  "Theme Park": "/images/categories/themepark.png",
 };
 
 export const CATS: Cat[] = [
   {
-    label: "Festival, Fair, Bazaar",
-    tmClassification: "Festival",
-    img: "/categories/festival.png",
-    Icon: Ticket,
+    label: "Music",
+    tmClassification: "KZFzniwnSyZfZ7v7nJ",
+    img: "music",
   },
   {
-    label: "Concert",
-    tmClassification: "Music",
-    img: "/categories/concert.png",
-    Icon: Music,
+    label: "Sport",
+    tmClassification: "KZFzniwnSyZfZ7v7nE",
+    img: "sport",
   },
   {
-    label: "Competition",
-    tmClassification: "Sports",
-    img: "/categories/competition.png",
-    Icon: Trophy,
+    label: "Arts & Theatre",
+    tmClassification: "KZFzniwnSyZfZ7v7na",
+    img: "art",
   },
   {
-    label: "Exhibition, Expo",
-    tmClassification: "Arts & Theatre",
-    img: "/categories/exhibition.png",
-    Icon: ImageIcon,
+    label: "Film",
+    tmClassification: "KZFzniwnSyZfZ7v7nn",
+    img: "film",
   },
   {
-    label: "Conference",
-    tmClassification: "Business",
-    img: "/categories/conference.png",
-    Icon: Briefcase,
+    label: "Venue Based",
+    tmClassification: "KZAyXgnZfZ7v7n1",
+    img: "festival",
   },
   {
-    label: "Workshop",
-    tmClassification: "Education",
-    img: "/categories/workshop.png",
-    Icon: BookOpen,
+    label: "Group",
+    tmClassification: "KZAyXgnZfZ7v7l1",
+    img: "family",
   },
   {
-    label: "Attraction / Theme Park",
-    tmClassification: "Miscellaneous",
-    img: "/categories/themepark.png",
-    Icon: Palette,
+    label: "Individual",
+    tmClassification: "KZAyXgnZfZ7v7la",
+    img: "workshop",
+  },
+  {
+    label: "NonTicket",
+    tmClassification: "KZAyXgnZfZ7v7l6",
+    img: "theme-park",
   },
 ];
 
@@ -72,23 +73,21 @@ export default function CategoriesSection() {
         </div>
 
         {/* Top image tiles */}
-        <div className="mt-5 flex gap-4 overflow-x-auto no-scrollbar snap-x">
+        <div className="mt-5 flex gap-4 overflow-x-auto md:overflow-hidden no-scrollbar snap-x">
           {CATS.map((c) => (
             <a
               key={c.label}
-              href={`/events?classificationName=${encodeURIComponent(
+              href={`/events?classificationId=${encodeURIComponent(
                 c.tmClassification
               )}`}
               className="shrink-0 snap-start"
             >
-              <div className="h-[112px] w-[112px] md:h-[132px] md:w-[132px] rounded-2xl overflow-hidden ring-1 ring-black/5 bg-gray-100">
+              <div className="h-[112px] w-[112px] md:h-[120px] md:w-[120px] rounded-2xl overflow-hidden ring-1 ring-black/5 bg-gray-100 relative">
                 <Image
-                  src={c.img}
+                  src={`/images/categories/${c.img}.png`}
                   alt={c.label}
-                  width={264}
-                  height={264}
-                  className="h-full w-full object-cover"
-                  priority
+                  fill
+                  style={{ objectFit: "cover" }}
                 />
               </div>
               <div className="mt-2 text-center text-[12px] md:text-sm font-medium line-clamp-2 w-[112px] md:w-[132px]">
@@ -108,7 +107,7 @@ export default function CategoriesSection() {
               )}`}
               className="inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              <c.Icon size={16} className="text-blue-500" />
+              {/* <c.Icon size={16} className="text-blue-500" /> */}
               <span>{c.label}</span>
             </a>
           ))}

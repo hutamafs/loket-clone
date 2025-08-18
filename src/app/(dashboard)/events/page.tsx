@@ -56,6 +56,13 @@ function getQueryParams(params: {
     ? [params.classificationId]
     : [];
 
+  // Handle genreId as an array
+  const genreId = Array.isArray(params.genreId)
+    ? params.genreId
+    : typeof params.genreId === "string"
+    ? [params.genreId]
+    : [];
+
   return {
     page: getParam("page"),
     lat,
@@ -65,7 +72,7 @@ function getQueryParams(params: {
     city,
     size: getParam("size"),
     classificationId,
-    genreId: getParam("genreId"),
+    genreId,
     venueId: getParam("venueId"),
   };
 }
@@ -77,7 +84,7 @@ async function fetchEventData(params: Record<string, string | string[]>) {
 
     // Add all non-array parameters
     Object.entries(params).forEach(([key, value]) => {
-      if (key !== "classificationId") {
+      if (key !== "classificationId" && key !== "genreId") {
         searchParams.append(key, value as string);
       }
     });
@@ -86,6 +93,13 @@ async function fetchEventData(params: Record<string, string | string[]>) {
     if (Array.isArray(params.classificationId)) {
       params.classificationId.forEach((id) => {
         if (id) searchParams.append("classificationId", id);
+      });
+    }
+
+    // Add each genreId separately for arrays
+    if (Array.isArray(params.genreId)) {
+      params.genreId.forEach((id) => {
+        if (id) searchParams.append("genreId", id);
       });
     }
 

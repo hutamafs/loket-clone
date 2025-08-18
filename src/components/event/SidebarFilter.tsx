@@ -35,16 +35,21 @@ export default function SidebarFilter() {
       .getAll("classificationId")
       .filter(Boolean);
 
+    // Handle multiple genreIds
+    const genreIds = searchParams.getAll("genreId").filter(Boolean);
+
     return {
       page: searchParams.get("page") || "0",
       lat: searchParams.get("lat") || "",
       lng: searchParams.get("lng") || "",
+      // lat: searchParams.get("lat") || cityCoordinates[city].lat,
+      // lng: searchParams.get("lng") || cityCoordinates[city].lng,
       radius: searchParams.get("radius") || "50",
       keyword: searchParams.get("keyword") || "",
       city: city,
       size: searchParams.get("size") || "8",
       classificationIds: classificationIds.length > 0 ? classificationIds : [],
-      genreId: searchParams.get("genreId") || "",
+      genreIds: genreIds.length > 0 ? genreIds : [],
       venueId: searchParams.get("venueId") || "",
     };
   }, [searchParams]);
@@ -118,9 +123,6 @@ export default function SidebarFilter() {
         params.append("classificationId", id);
       });
 
-      // Reset genre when classification changes
-      params.delete("genreId");
-
       // Always reset to page 0 when filter changes
       params.set("page", "0");
 
@@ -143,16 +145,42 @@ export default function SidebarFilter() {
 
   const handleGenreSelect = useCallback(
     (genreId: string) => {
-      updateUrlAndNavigate({ genreId });
+      const currentGenreIds = q.genreIds || [];
+      let newGenreIds: string[];
+
+      // Toggle selection logic
+      if (currentGenreIds.includes(genreId)) {
+        // Remove if already selected
+        newGenreIds = currentGenreIds.filter((id) => id !== genreId);
+      } else {
+        // Add if not selected
+        newGenreIds = [...currentGenreIds, genreId];
+      }
+
+      // Build new URL parameters
+      const params = new URLSearchParams(searchParams.toString());
+
+      // Remove existing genres
+      params.delete("genreId");
+
+      // Add new genres
+      newGenreIds.forEach((id) => {
+        params.append("genreId", id);
+      });
+
+      // Always reset to page 0 when filter changes
+      params.set("page", "0");
+
+      // Navigate to new URL
+      router.push(`/events?${params.toString()}`);
     },
-    [updateUrlAndNavigate]
+    [q.genreIds, router, searchParams]
   );
 
   const handleVenueSelect = useCallback(
     (venueId: string) => {
       updateUrlAndNavigate({
         venueId,
-        genreId: "",
       });
     },
     [updateUrlAndNavigate]
@@ -170,8 +198,8 @@ export default function SidebarFilter() {
 
         const classificationsData = await classificationsRes.json();
         const venuesData = await venuesRes.json();
-        console.log(classificationsData.data);
 
+        console.log(classificationsData);
         setOptions({
           classifications: classificationsData.data || [],
           venues: venuesData.data || [],
@@ -202,11 +230,11 @@ export default function SidebarFilter() {
       setOpenClassification(true);
     }
 
-    // Automatically open genre section if a genre is selected
-    if (q.genreId) {
+    // Automatically open genre section if genres are selected
+    if (q.genreIds.length > 0) {
       setOpenGenre(true);
     }
-  }, [q.venueId, q.classificationIds, q.genreId]);
+  }, [q.venueId, q.classificationIds, q.genreIds]);
 
   // Reset all filters
   const handleResetFilters = useCallback(() => {
@@ -429,17 +457,42 @@ export default function SidebarFilter() {
                     </div>
                   ) : (
                     selectedClassification.genres.map((g) => (
-                      <button
-                        key={g.id}
-                        onClick={() => handleGenreSelect(g.id)}
-                        className={`block w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-gray-100 ${
-                          q.genreId === g.id
-                            ? "bg-blue-100 text-blue-700 font-semibold"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        {g.name}
-                      </button>
+                      <div key={g.id} className="flex items-center">
+                        <button
+                          onClick={() => handleGenreSelect(g.id)}
+                          className={`block w-full text-left px-3 py-1.5 text-sm rounded-md hover:bg-gray-100 ${
+                            q.genreIds.includes(g.id)
+                              ? "bg-blue-100 text-blue-700 font-semibold"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          <span className="flex items-center">
+                            <span
+                              className={`w-4 h-4 mr-2 inline-flex items-center justify-center border rounded ${
+                                q.genreIds.includes(g.id)
+                                  ? "bg-blue-500 border-blue-500 text-white"
+                                  : "border-gray-400"
+                              }`}
+                            >
+                              {q.genreIds.includes(g.id) && (
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-3 w-3"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                            </span>
+                            {g.name}
+                          </span>
+                        </button>
+                      </div>
                     ))
                   )}
                 </div>

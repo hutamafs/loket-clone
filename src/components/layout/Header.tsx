@@ -2,13 +2,26 @@ import Link from "next/link";
 import { searchEvents } from "@/app/actions/search";
 
 const quickTags = [
-  "Promo",
-  "Featured",
-  "Music",
-  "Family",
-  "Sports",
-  "Workshop",
-  "Conference",
+  {
+    label: "Comedy",
+    genreId: "KnvZfZ7vAe1", // Comedy genreId from Ticketmaster
+  },
+  {
+    label: "Family",
+    genreId: "KnvZfZ7vAeF",
+  },
+  {
+    label: "Food & Drink",
+    genreId: "KnvZfZ7vAeD",
+  },
+  {
+    label: "Community",
+    genreId: "KnvZfZ7vAeU",
+  },
+  {
+    label: "Ice Shows",
+    genreId: "KnvZfZ7vAeI",
+  },
 ];
 
 export default function Header() {
@@ -138,11 +151,11 @@ export default function Header() {
           <div className="flex justify-start md:justify-center gap-1.5 md:gap-2 overflow-x-auto scrollbar-none py-1">
             {quickTags.map((t) => (
               <Link
-                key={t}
-                href={`/events?keyword=${encodeURIComponent(t)}`}
+                key={t.label}
+                href={`/events?genreId=${encodeURIComponent(t.genreId)}`}
                 className="px-2 md:px-3 py-1 md:py-1.5 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 text-xs whitespace-nowrap"
               >
-                #{t}
+                #{t.label}
               </Link>
             ))}
           </div>

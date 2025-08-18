@@ -42,6 +42,12 @@ export async function GET(req: Request) {
       qp.set("classificationId", classificationIds.join(","));
     }
 
+    // Handle genreId as an array
+    const genreIds = searchParams.getAll("genreId");
+    if (genreIds.length > 0) {
+      qp.set("genreId", genreIds.join(","));
+    }
+
     // Handle venueId
     const venueId = searchParams.get("venueId");
     if (venueId) qp.set("venueId", venueId);

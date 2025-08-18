@@ -1,5 +1,7 @@
 import Image from "next/image";
+import Link from "next/link";
 
+import clsx from "clsx";
 type Cat = {
   label: string; // English label
   tmClassification: string;
@@ -18,6 +20,107 @@ export const categoryImages: Record<string, string> = {
   Family: "/images/categories/family.png",
   "Theme Park": "/images/categories/themepark.png",
 };
+
+const genrePills = [
+  {
+    id: "basketball",
+    label: "Basketball",
+    icon: "🏀",
+    classificationId: "KZFzniwnSyZfZ7v7nE",
+    genreId: "KnvZfZ7vAde",
+  },
+  {
+    id: "baseball",
+    label: "Baseball",
+    icon: "⚾",
+    classificationId: "KZFzniwnSyZfZ7v7nE",
+    genreId: "KnvZfZ7vAdv",
+  },
+  {
+    id: "tennis",
+    label: "Tennis",
+    icon: "🎾",
+    classificationId: "KZFzniwnSyZfZ7v7nE",
+    genreId: "KnvZfZ7vA7E",
+  },
+  {
+    id: "esports",
+    label: "Esports",
+    icon: "🎮",
+    classificationId: "KZFzniwnSyZfZ7v7nE",
+    genreId: "KnvZfZ7vAJF",
+  },
+  {
+    id: "padel",
+    label: "Padel",
+    icon: "🎾",
+    classificationId: "KZFzniwnSyZfZ7v7nE",
+    genreId: "KnvZfZ7vAeP",
+  }, // fallback
+  {
+    id: "classical",
+    label: "Classical",
+    icon: "🎼",
+    classificationId: "KZFzniwnSyZfZ7v7nJ",
+    genreId: "KnvZfZ7vAeA",
+  },
+  {
+    id: "country",
+    label: "Country",
+    icon: "🎸",
+    classificationId: "KZFzniwnSyZfZ7v7nJ",
+    genreId: "KnvZfZ7vAe6",
+  },
+  {
+    id: "religious",
+    label: "Religious",
+    icon: "⛪",
+    classificationId: "KZFzniwnSyZfZ7v7nJ",
+    genreId: "KnvZfZ7vAeR",
+  },
+  {
+    id: "action",
+    label: "Action",
+    icon: "⚔️",
+    classificationId: "KZFzniwnSyZfZ7v7na",
+    genreId: "KnvZfZ7vAeX",
+  },
+  {
+    id: "adventure",
+    label: "Adventure",
+    icon: "🏔️",
+    classificationId: "KZFzniwnSyZfZ7v7na",
+    genreId: "KnvZfZ7vAeY",
+  },
+  {
+    id: "cultural",
+    label: "Cultural",
+    icon: "🌍",
+    classificationId: "KZFzniwnSyZfZ7v7na",
+    genreId: "KnvZfZ7vAeC",
+  },
+  {
+    id: "children",
+    label: "Children’s Theatre",
+    icon: "👶",
+    classificationId: "KZFzniwnSyZfZ7v7na",
+    genreId: "KnvZfZ7vAeK",
+  },
+  {
+    id: "multimedia",
+    label: "Multimedia",
+    icon: "🎬",
+    classificationId: "KZFzniwnSyZfZ7v7na",
+    genreId: "KnvZfZ7vAeM",
+  },
+  {
+    id: "opera",
+    label: "Opera",
+    icon: "🎭",
+    classificationId: "KZFzniwnSyZfZ7v7na",
+    genreId: "KnvZfZ7vAeO",
+  },
+];
 
 export const CATS: Cat[] = [
   {
@@ -98,19 +201,21 @@ export default function CategoriesSection() {
         </div>
 
         {/* Pill row with icons */}
-        <div className="mt-6 flex flex-wrap gap-2 md:gap-3">
-          {CATS.map((c) => (
-            <a
-              key={`${c.label}-pill`}
-              href={`/events?classificationName=${encodeURIComponent(
-                c.tmClassification
-              )}`}
-              className="inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              {/* <c.Icon size={16} className="text-blue-500" /> */}
-              <span>{c.label}</span>
-            </a>
-          ))}
+        <div className="flex flex-wrap gap-2 mt-8">
+          {genrePills.map(({ id, label, icon, classificationId, genreId }) => {
+            return (
+              <Link
+                key={id}
+                href={`/events?classificationId=${classificationId}&genreId=${genreId}`}
+                className={clsx(
+                  "flex items-center gap-2 px-4 py-2 rounded-full border text-sm transition bg-white text-[#0e3a8a] hover:bg-gray-100"
+                )}
+              >
+                <span>{icon}</span>
+                {label}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

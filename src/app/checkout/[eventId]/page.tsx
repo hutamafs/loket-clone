@@ -1,4 +1,4 @@
-import EventCheckout from "@/components/checkout/CheckoutForm";
+import CheckoutPage from "@/components/checkout/page";
 
 async function getEvent(eventId: string) {
   const res = await fetch(
@@ -15,9 +15,10 @@ async function getEvent(eventId: string) {
 export default async function EventPage({
   params,
 }: {
-  params: { eventId: string };
+  params: Promise<{ eventId: string }>;
 }) {
-  const event = await getEvent(params.eventId);
+  const { eventId } = await params;
+  const event = await getEvent(eventId);
 
-  return <EventCheckout event={event} />;
+  return <CheckoutPage event={event} />;
 }

@@ -15,6 +15,7 @@ export interface Event {
     display: string;
     currency: string;
   };
+  organizer: string;
   category: string;
   canEdit: boolean;
   canRegister: boolean;

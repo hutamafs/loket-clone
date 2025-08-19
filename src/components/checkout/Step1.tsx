@@ -2,12 +2,19 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { Event } from "@/app/types/event";
 
-function EventCheckout({ event }: { event: any }) {
+function EventCheckout({
+  event,
+  setStep,
+}: {
+  event: Event;
+  setStep: (step: number) => void;
+}) {
   const [quantity, setQuantity] = useState(0);
 
   const price =
-    event.price?.min && event.price?.min > 0 ? event.price.min : 250000; // demo fallback
+    event.price?.min && event.price?.min > 0 ? event.price.min : 100; // demo fallback
   const subtotal = quantity * price;
 
   return (
@@ -121,11 +128,12 @@ function EventCheckout({ event }: { event: any }) {
             <p className="text-sm text-gray-600">
               Subtotal ({quantity} ticket{quantity > 1 && "s"})
             </p>
-            <p className="font-semibold">
-              Rp {subtotal.toLocaleString("id-ID")}
-            </p>
+            <p className="font-semibold">${subtotal.toLocaleString("en-AU")}</p>
           </div>
-          <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+          <button
+            onClick={() => setStep(2)}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+          >
             Order Now
           </button>
         </div>
@@ -138,11 +146,12 @@ function EventCheckout({ event }: { event: any }) {
             <p className="text-sm text-gray-600">
               Subtotal ({quantity} ticket{quantity > 1 && "s"})
             </p>
-            <p className="font-semibold">
-              Rp {subtotal.toLocaleString("id-ID")}
-            </p>
+            <p className="font-semibold">${subtotal.toLocaleString("en-AU")}</p>
           </div>
-          <button className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700">
+          <button
+            onClick={() => setStep(2)}
+            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700"
+          >
             Order Now
           </button>
         </div>

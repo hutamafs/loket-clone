@@ -11,7 +11,7 @@ function EventCheckout({ event }: { event: Event }) {
   return (
     <>
       {step === 1 && <Step1 event={event} setStep={setStep} />}
-      {step === 2 && <Step2 />}
+      {step === 2 && <Step2 event={event} />}
     </>
   );
 }

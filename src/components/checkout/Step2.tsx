@@ -1,6 +1,11 @@
-import { useState } from "react";
+"use client";
+import { useState, useMemo } from "react";
+import Image from "next/image";
+import { Event } from "@/app/types/event";
+import { useCheckoutStore } from "@/store/checkout";
+import { AttendeeSchema } from "@/lib/validation";
 
-export default function Step2() {
+export default function Step2({ event }: { event: Event }) {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -9,14 +14,63 @@ export default function Step2() {
     gender: "",
     idNumber: "",
   });
+  const quantity = useCheckoutStore((s) => s.quantity);
+  const setAttendee = useCheckoutStore((s) => s.setAttendee);
+  const basePrice =
+    event.price?.min && event.price.min > 0 ? event.price.min : 100;
+  const total = useMemo(() => basePrice * quantity, [basePrice, quantity]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const isFormValid =
+  const isFormValid = Boolean(
     form.name &&
-    form.email &&
-    form.phone &&
-    form.dob &&
-    form.gender &&
-    form.idNumber;
+      form.email &&
+      form.phone &&
+      form.dob &&
+      form.gender &&
+      form.idNumber
+  );
+
+  async function handleSubmit() {
+    setError(null);
+    if (!isFormValid) return;
+    if (quantity <= 0) {
+      setError("Please select quantity in Step 1");
+      return;
+    }
+    const parsed = AttendeeSchema.safeParse(form);
+    if (!parsed.success) {
+      setError("Validation failed");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      setAttendee(parsed.data);
+      const payload = {
+        eventSource: event.source || "ticketmaster",
+        eventId: event.id,
+        quantity,
+        totalAmount: total * 100, // to cents
+        currency: event.price?.currency || "AUD",
+        attendee: parsed.data,
+      };
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success)
+        throw new Error(json.message || "Order failed");
+      setSuccess(true);
+      // TODO: trigger /api/checkout then redirect to Stripe.
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="min-h-[calc(100vh-120px)] bg-gray-50 px-4 md:px-20 py-10">
@@ -108,7 +162,12 @@ export default function Step2() {
               Available Payment Method
             </h3>
             <div className="flex items-center space-x-2">
-              <img src="/stripe-logo.svg" alt="Stripe" className="h-6" />
+              <Image
+                src="/images/payment/stripe.webp"
+                alt="Stripe"
+                width={60}
+                height={30}
+              />
             </div>
           </div>
         </div>
@@ -119,25 +178,38 @@ export default function Step2() {
             <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
 
             <div className="flex justify-between text-sm mb-2">
-              <span>Public Training Sales1</span>
-              <span>Rp 250.000</span>
+              <span>{event.name}</span>
+              <span>{event.price?.display ?? `$${basePrice}`}</span>
             </div>
             <div className="flex justify-between font-medium border-t pt-2">
               <span>Grand Total</span>
-              <span>Rp 250.000</span>
+              <span>
+                {quantity > 0
+                  ? `${
+                      event.price?.currency || "AUD"
+                    } ${total.toLocaleString()}`
+                  : "--"}
+              </span>
             </div>
 
             {/* Pay Now */}
             <button
-              disabled={!isFormValid}
+              disabled={!isFormValid || submitting || success}
+              onClick={handleSubmit}
               className={`mt-6 w-full py-3 rounded-lg font-semibold ${
-                isFormValid
+                isFormValid && !submitting
                   ? "bg-blue-600 text-white hover:bg-blue-700"
                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
-              Pay Now
+              {success ? "Saved" : submitting ? "Saving..." : "Pay Now"}
             </button>
+            {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+            {success && (
+              <p className="text-sm text-green-600 mt-2">
+                Order created (pending). Stripe session next.
+              </p>
+            )}
           </div>
         </div>
       </div>

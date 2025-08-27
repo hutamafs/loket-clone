@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useCheckoutStore } from "@/store/checkout";
 import { Event } from "@/app/types/event";
 
 function EventCheckout({
@@ -12,6 +13,7 @@ function EventCheckout({
   setStep: (step: number) => void;
 }) {
   const [quantity, setQuantity] = useState(0);
+  const setQuantityGlobal = useCheckoutStore((s) => s.setQuantity);
 
   const price =
     event.price?.min && event.price?.min > 0 ? event.price.min : 100; // demo fallback
@@ -82,7 +84,11 @@ function EventCheckout({
                 </button>
                 <select
                   value={quantity}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setQuantity(v);
+                    setQuantityGlobal(v);
+                  }}
                   className="border rounded-lg px-2 py-1"
                 >
                   {[...Array(10)].map((_, i) => (
@@ -131,7 +137,10 @@ function EventCheckout({
             <p className="font-semibold">${subtotal.toLocaleString("en-AU")}</p>
           </div>
           <button
-            onClick={() => setStep(2)}
+            onClick={() => {
+              setQuantityGlobal(quantity);
+              setStep(2);
+            }}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
           >
             Order Now
@@ -149,7 +158,10 @@ function EventCheckout({
             <p className="font-semibold">${subtotal.toLocaleString("en-AU")}</p>
           </div>
           <button
-            onClick={() => setStep(2)}
+            onClick={() => {
+              setQuantityGlobal(quantity);
+              setStep(2);
+            }}
             className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700"
           >
             Order Now

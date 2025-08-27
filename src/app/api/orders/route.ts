@@ -1,24 +1,41 @@
 import { NextResponse } from "next/server";
-import { v4 as uuidv4 } from "uuid";
+import { OrderCreateSchema } from "@/lib/validation";
+import { insertPendingOrder } from "@/lib/db/orders";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const json = await req.json();
+    const parsed = OrderCreateSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid payload",
+          issues: parsed.error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
 
-    const order = {
-      id: uuidv4(),
-      ...body,
-      createdAt: new Date().toISOString(),
-      status: "pending",
-    };
+    const { eventSource, eventId, quantity, totalAmount, currency, attendee } =
+      parsed.data;
 
-    console.log("Mock Order Saved:", order);
+    // TODO: replace userId null with real auth user id when auth integrated
+    const record = await insertPendingOrder({
+      userId: null,
+      eventSource,
+      eventId,
+      quantity,
+      totalAmount,
+      currency,
+      attendee,
+    });
 
-    return NextResponse.json({ success: true, data: order });
+    return NextResponse.json({ success: true, data: record });
   } catch (err) {
-    console.error(err);
+    console.error("/api/orders error", err);
     return NextResponse.json(
-      { success: false, message: "Failed to save order" },
+      { success: false, message: "Failed to create order" },
       { status: 500 }
     );
   }

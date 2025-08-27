@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { fmtClassifications, transform } from "@/lib/transformTmObj";
-import { TicketmasterClassification } from "@/app/types/event";
 
 const TM_KEY = process.env.TICKETMASTER_API_KEY!;
 const TM_BASE = process.env.TICKETMASTER_API_URL!;

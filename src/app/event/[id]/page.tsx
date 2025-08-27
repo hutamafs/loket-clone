@@ -39,9 +39,9 @@ type ApiEvent = {
 export default async function EventPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = params;
+  const { id } = await params;
 
   const res = await fetch(`${base}/api/events/ticketmaster/${id}`, {
     cache: "no-store",

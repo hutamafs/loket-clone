@@ -42,7 +42,7 @@ export default function HorizontalScroller({
       el.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
-  }, []);
+  }, [update]);
 
   const nav = (dir: "left" | "right") => {
     const el = trackRef.current;

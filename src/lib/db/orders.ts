@@ -69,6 +69,16 @@ export async function getOrderByStripeSession(sessionId: string) {
   return data;
 }
 
+export async function getOrderById(id: string) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export async function listOrdersForUser(userId: string) {
   const { data, error } = await supabase
     .from("orders")

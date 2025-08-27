@@ -50,6 +50,12 @@ function transform(tm: TicketmasterEvent) {
   };
 }
 
+/*
+  to genereate ticket list we can fetch this 
+  https://www.ticketmaster.com.au/api/seatmap/seatmapoffered/${id}?resaleProvider=INTL
+  we can get the id from raw.url.split("/")[raw.url.length - 1];
+*/
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }

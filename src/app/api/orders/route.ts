@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { OrderCreateSchema } from "@/lib/validation";
-import { insertPendingOrder } from "@/lib/db/orders";
+import { insertPendingOrder, getOrderById } from "@/lib/db/orders";
 
 export async function POST(req: Request) {
   try {
@@ -36,6 +36,33 @@ export async function POST(req: Request) {
     console.error("/api/orders error", err);
     return NextResponse.json(
       { success: false, message: "Failed to create order" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "Missing id" },
+        { status: 400 }
+      );
+    }
+    const order = await getOrderById(id);
+    if (!order) {
+      return NextResponse.json(
+        { success: false, message: "Not found" },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json({ success: true, data: order });
+  } catch (err) {
+    console.error("/api/orders GET", err);
+    return NextResponse.json(
+      { success: false, message: "Failed" },
       { status: 500 }
     );
   }

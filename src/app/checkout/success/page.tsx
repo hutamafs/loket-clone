@@ -10,6 +10,7 @@ import {
   Separator,
 } from "@/components/ui";
 import { useSearchParams } from "next/navigation";
+import React from "react";
 import { useEffect, useState } from "react";
 import {
   CheckCircle,
@@ -31,24 +32,55 @@ export default function CheckoutSuccessPage() {
     attendee_name: string;
     attendee_email: string;
     attendee_phone?: string;
+    status?: string;
   }
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch order initially & poll briefly if still pending; use session_id fallback
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
-    fetch(`/api/orders?id=${id}`)
+    let attempts = 0;
+    let timer: NodeJS.Timeout;
+    const load = () => {
+      setLoading(true);
+      fetch(`/api/orders?id=${id}`)
+        .then((r) => r.json())
+        .then((json) => {
+          if (!json.success)
+            throw new Error(json.message || "Failed fetching order");
+          setOrder(json.data);
+          const paid = json.data.status === "paid";
+          if (!paid && attempts < 5) {
+            attempts++;
+            timer = setTimeout(load, 1500);
+          }
+        })
+        .catch((e) => {
+          setError(e.message);
+        })
+        .finally(() => setLoading(false));
+    };
+    load();
+    return () => clearTimeout(timer);
+  }, [id]);
+
+  // If order still missing or pending but session_id present, fetch Stripe session directly
+  useEffect(() => {
+    const sessionId = search.get("session_id");
+    if (!sessionId) return;
+    if (order && order.status === "paid") return;
+    const cancelled = false;
+    fetch(`/api/checkout/session-status?session_id=${sessionId}`)
       .then((r) => r.json())
       .then((json) => {
-        if (!json.success)
-          throw new Error(json.message || "Failed fetching order");
-        setOrder(json.data);
+        if (!json.success || cancelled) return;
+        if (json.order) setOrder(json.order);
       })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [id]);
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, order?.id, order?.status]);
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -69,7 +101,13 @@ export default function CheckoutSuccessPage() {
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold mb-4">Payment Successful!</h1>
+          <h1 className="text-3xl font-bold mb-4">
+            {order
+              ? order.status === "paid"
+                ? "Payment Successful!"
+                : "Payment Processing"
+              : "Order Processing"}
+          </h1>
           {loading && (
             <p className="text-muted-foreground mb-4">Loading order…</p>
           )}
@@ -86,8 +124,19 @@ export default function CheckoutSuccessPage() {
                 <Ticket className="h-5 w-5" />
                 Order Confirmation
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="flex items-center gap-2">
                 {order ? `Order #${order.id}` : id ? `Order #${id}` : "Order"}
+                {order && (
+                  <span
+                    className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium border ${
+                      order.status === "paid"
+                        ? "bg-green-100 text-green-700 border-green-200"
+                        : "bg-amber-100 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {order.status === "paid" ? "Paid" : "Pending"}
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

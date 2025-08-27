@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { supabaseAdmin } from "../supabaseAdmin";
 
 export interface InsertOrderParams {
   userId: string | null; // allow null for now (guest) until auth
@@ -20,7 +21,11 @@ export interface InsertOrderParams {
 }
 
 export async function insertPendingOrder(p: InsertOrderParams) {
-  const { data, error } = await supabase
+  const client = !p.userId && supabaseAdmin ? supabaseAdmin : supabase;
+  if (!p.userId && !supabaseAdmin) {
+    // fallback will likely RLS fail; let it bubble
+  }
+  const { data, error } = await client
     .from("orders")
     .insert({
       user_id: p.userId,
@@ -85,6 +90,20 @@ export async function listOrdersForUser(userId: string) {
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function attachStripeSessionToOrder(
+  orderId: string,
+  sessionId: string
+) {
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ stripe_session_id: sessionId })
+    .eq("id", orderId)
+    .select()
+    .single();
   if (error) throw error;
   return data;
 }

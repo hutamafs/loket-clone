@@ -1,6 +1,9 @@
 import { NextRequest } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { insertPendingOrder } from "@/lib/db/orders";
+import {
+  insertPendingOrder,
+  attachStripeSessionToOrder,
+} from "@/lib/db/orders";
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,22 +29,37 @@ export async function POST(req: NextRequest) {
     const totalAmount = unitAmount * quantity; // cents
 
     // Insert pending order (guest user for now)
-    const order = await insertPendingOrder({
-      userId: null,
-      eventSource,
-      eventId,
-      quantity,
-      totalAmount,
-      currency: currency.toUpperCase(),
-      attendee: {
-        name: attendee.name,
-        email: attendee.email,
-        phone: attendee.phone || "",
-        dob: attendee.dob || "2000-01-01",
-        gender: attendee.gender || null,
-        idNumber: attendee.idNumber || "TEMP-ID",
-      },
-    });
+    // For now we allow guest orders (userId null). RLS currently requires auth.uid() = user_id; will fail for null.
+    // TODO: Create a permissive policy for guest inserts OR require auth and pass user id.
+    // Temporarily we wrap in try/catch and return a clear error.
+    let order;
+    try {
+      order = await insertPendingOrder({
+        userId: null,
+        eventSource,
+        eventId,
+        quantity,
+        totalAmount,
+        currency: currency.toUpperCase(),
+        attendee: {
+          name: attendee.name,
+          email: attendee.email,
+          phone: attendee.phone || "",
+          dob: attendee.dob || "2000-01-01",
+          gender: attendee.gender || null,
+          idNumber: attendee.idNumber || "TEMP-ID",
+        },
+      });
+    } catch {
+      return Response.json(
+        {
+          success: false,
+          message:
+            "Order insert blocked by RLS: configure policy for guest orders or authenticate.",
+        },
+        { status: 403 }
+      );
+    }
 
     const stripe = getStripe();
 
@@ -60,8 +78,12 @@ export async function POST(req: NextRequest) {
           },
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/checkout/success?id=${order.id}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/checkout/${eventId}`,
+      success_url: `${
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+      }/checkout/success?id=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+      }/checkout/${eventId}`,
       metadata: {
         order_id: order.id,
         event_id: eventId,
@@ -69,19 +91,22 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // update order with session id
-    // Using direct supabase update to avoid extra helper for now
-    // (could add helper later)
-    // NOTE: ignoring error intentionally minimal; rely on DB policy
-    await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      // no-op; already inserted. In full impl we'd patch order with session id via dedicated endpoint or server-side supabase admin
-    });
+    try {
+      await attachStripeSessionToOrder(order.id, session.id!);
+    } catch (e) {
+      console.warn(
+        "Failed to attach stripe session id to order (RLS likely)",
+        e
+      );
+    }
 
-    return Response.json({ success: true, url: session.url, orderId: order.id });
+    return Response.json({
+      success: true,
+      url: session.url,
+      orderId: order.id,
+    });
   } catch (e: unknown) {
-    console.error('checkout session error', e);
+    console.error("checkout session error", e);
     return Response.json(
       { success: false, message: (e as Error).message },
       { status: 500 }

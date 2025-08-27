@@ -60,6 +60,12 @@ drop policy if exists "User inserts own orders" on public.orders;
 create policy "User inserts own orders" on public.orders
   for insert with check ( auth.uid() = user_id );
 
+-- Optional guest checkout (allow inserting orders with NULL user_id)
+-- Uncomment if you want to allow anonymous orders without auth:
+-- drop policy if exists "Guest inserts orders" on public.orders;
+-- create policy "Guest inserts orders" on public.orders
+--   for insert with check ( auth.uid() is null and user_id is null );
+
 -- Organizer / analytics policies will be added when custom events are introduced.
 
 -- (Remove duplicates above; extended schema for events/favorites will be applied separately when needed.)

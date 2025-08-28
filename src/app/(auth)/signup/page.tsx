@@ -3,6 +3,8 @@
 import type React from "react";
 
 import { useState } from "react";
+import { toast } from "sonner";
+import { supabaseBrowser } from "@/lib/auth/client";
 import {
   Card,
   CardContent,
@@ -32,8 +34,51 @@ export default function SignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // TODO: Implement sign up logic
-    setTimeout(() => setIsLoading(false), 1000);
+    try {
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Passwords do not match");
+        setIsLoading(false);
+        return;
+      }
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      const { error } = await supabaseBrowser.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: fullName,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+          },
+        },
+      });
+      if (error) {
+        const msg = error.message?.toLowerCase() || "";
+        if (
+          msg.includes("already registered") ||
+          msg.includes("user already registered") ||
+          msg.includes("exists")
+        ) {
+          toast.error("Email already registered");
+        } else {
+          toast.error(error.message || "Sign up failed");
+        }
+        setIsLoading(false);
+        return;
+      }
+      // If email confirmation is enabled user may need to confirm; trigger will create profile automatically.
+      toast.success(
+        "Account created. Check your email to confirm (if required) then sign in."
+      );
+      setTimeout(() => {
+        window.location.href = "/signin";
+      }, 1200);
+    } catch (e: unknown) {
+      console.log(e.message);
+      toast.error(e instanceof Error ? e.message : "Unexpected error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -157,31 +202,6 @@ export default function SignUpPage() {
                     )}
                   </button>
                 </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  id="terms"
-                  type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  required
-                />
-                <Label htmlFor="terms" className="text-sm text-gray-600">
-                  I agree to the{" "}
-                  <Link
-                    href="/terms"
-                    className="text-blue-600 hover:text-blue-500"
-                  >
-                    Terms of Service
-                  </Link>{" "}
-                  and{" "}
-                  <Link
-                    href="/privacy"
-                    className="text-blue-600 hover:text-blue-500"
-                  >
-                    Privacy Policy
-                  </Link>
-                </Label>
               </div>
 
               <Button

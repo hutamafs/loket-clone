@@ -47,10 +47,19 @@ drop policy if exists "Public profiles read" on public.profiles;
 create policy "Public profiles read" on public.profiles
   for select using ( true );
 
-drop policy if exists "User manages own profile" on public.profiles;
-create policy "User manages own profile" on public.profiles
-  for all using ( auth.uid() = user_id )
+-- Replace single combined policy with granular ones so trigger inserts aren't blocked by auth.uid() = user_id check
+drop policy if exists "User manages own profile" on public.profiles; -- legacy combined
+drop policy if exists "User inserts own profile" on public.profiles;
+drop policy if exists "User updates own profile" on public.profiles;
+
+create policy "User inserts own profile" on public.profiles
+  for insert with check ( auth.uid() = user_id );
+
+create policy "User updates own profile" on public.profiles
+  for update using ( auth.uid() = user_id )
   with check ( auth.uid() = user_id );
+
+-- select policy already created above (public read)
 
 drop policy if exists "User reads own orders" on public.orders;
 create policy "User reads own orders" on public.orders
@@ -69,3 +78,30 @@ create policy "User inserts own orders" on public.orders
 -- Organizer / analytics policies will be added when custom events are introduced.
 
 -- (Remove duplicates above; extended schema for events/favorites will be applied separately when needed.)
+
+-- ------------------------------------------------------------
+-- AUTOMATIC PROFILE CREATION TRIGGER
+-- Inserts a row in public.profiles whenever a new auth.users row
+-- is created. Uses raw_user_meta_data (name / first_name+last_name).
+-- Idempotent: safe to re-run.
+-- ------------------------------------------------------------
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (user_id, name)
+  values (
+    new.id,
+    coalesce(
+      new.raw_user_meta_data->>'name',
+      trim(concat_ws(' ', new.raw_user_meta_data->>'first_name', new.raw_user_meta_data->>'last_name'))
+    )
+  )
+  on conflict (user_id) do nothing;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();

@@ -79,10 +79,10 @@ export async function POST(req: NextRequest) {
         },
       ],
       success_url: `${
-        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
       }/checkout/success?id=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${
-        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
       }/checkout/${eventId}`,
       metadata: {
         order_id: order.id,

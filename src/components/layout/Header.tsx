@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { getSessionUser } from "@/lib/auth/server";
 
-export default function Header() {
+export default async function Header() {
+  const user = await getSessionUser();
   return (
     <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
       <div className="container mx-auto px-4 md:px-2 h-16 flex items-center justify-between">
@@ -24,8 +26,21 @@ export default function Header() {
           </nav>
         </div>
         <div className="flex items-center space-x-4">
-          <Link href="/signin">Sign In</Link>
-          <Link href="/signup">Sign Up</Link>
+          {user ? (
+            <>
+              <span className="text-sm">{user.email}</span>
+              <form action="/api/auth/signout" method="post">
+                <button className="text-sm underline" type="submit">
+                  Sign Out
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link href="/signin">Sign In</Link>
+              <Link href="/signup">Sign Up</Link>
+            </>
+          )}
         </div>
       </div>
     </header>

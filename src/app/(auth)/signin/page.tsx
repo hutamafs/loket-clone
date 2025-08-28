@@ -3,6 +3,8 @@
 import type React from "react";
 
 import { useState } from "react";
+import { supabaseBrowser } from "@/lib/auth/client";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -26,8 +28,32 @@ export default function SignInPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // TODO: Implement sign in logic
-    setTimeout(() => setIsLoading(false), 1000);
+    try {
+      const { error, data } = await supabaseBrowser.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes("invalid login")) {
+          toast.error("Invalid email or password");
+        } else if (msg.includes("email not confirmed")) {
+          toast.error("Please confirm your email first");
+        } else {
+          toast.error(error.message || "Sign in failed");
+        }
+      } else {
+        toast.success(`Welcome back${data.user?.email ? ", " + data.user.email : ""}!`);
+        // small delay so user sees toast
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 600);
+      }
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Unexpected error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -113,7 +139,7 @@ export default function SignInPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-70"
                 disabled={isLoading}
               >
                 {isLoading ? "Signing in..." : "Sign In"}

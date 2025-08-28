@@ -24,8 +24,8 @@ export default function Header() {
           </nav>
         </div>
         <div className="flex items-center space-x-4">
-          <Link href="/sign-in">Sign In</Link>
-          <Link href="/sign-up">Sign Up</Link>
+          <Link href="/signin">Sign In</Link>
+          <Link href="/signup">Sign Up</Link>
         </div>
       </div>
     </header>

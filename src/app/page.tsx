@@ -2,6 +2,7 @@
 import CategoriesSection from "@/components/homepage/Categories";
 import FeaturedEvents from "@/components/homepage/FeaturedEvents";
 import HappeningSoon from "@/components/homepage/HappeningSoon";
+import HeroSection from "@/components/homepage/HeroSection";
 import TopEvents from "@/components/homepage/TopEvents";
 import { cityCoordinates } from "@/constant/coordinates";
 import { getEvents, tmNow, tmPlusDays } from "@/lib/tmClient";
@@ -56,28 +57,31 @@ export default async function Home() {
 
   return (
     // {/* Local first */}
-    <section className="max-w-7xl mx-auto px-4 py-8">
-      <FeaturedEvents
-        title="Featured Events in Melbourne"
-        events={featuredDeduped}
-      />
+    <>
+      <HeroSection />
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <FeaturedEvents
+          title="Featured Events in Melbourne"
+          events={featuredDeduped}
+        />
 
-      {/* Global reach */}
+        {/* Global reach */}
 
-      <TopEvents title="Top Events in Australia" events={worldwideDeduped} />
+        <TopEvents title="Top Events in Australia" events={worldwideDeduped} />
 
-      {/* Country scope */}
+        {/* Country scope */}
 
-      <FeaturedEvents
-        title="Upcoming in Australia"
-        events={upcomingAUDeduped}
-      />
-      {/* Next sections you’ll add */}
-      {/* <CategoriesRow /> */}
-      <CategoriesSection />
-      <HappeningSoon lat={syd.lat} lng={syd.lng} radiusKm="30" />
-      {/* <FeaturedSoonNearYou /> */}
-      {/* <NewsletterCapture /> */}
-    </section>
+        <FeaturedEvents
+          title="Upcoming in Australia"
+          events={upcomingAUDeduped}
+        />
+        {/* Next sections you’ll add */}
+        {/* <CategoriesRow /> */}
+        <CategoriesSection />
+        <HappeningSoon lat={syd.lat} lng={syd.lng} radiusKm="30" />
+        {/* <FeaturedSoonNearYou /> */}
+        {/* <NewsletterCapture /> */}
+      </div>
+    </>
   );
 }

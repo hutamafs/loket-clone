@@ -1,15 +1,28 @@
 import Link from "next/link";
 import { getSessionUser } from "@/lib/auth/server";
+import { ShoppingCart, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import MobileMenu from "./mobile-menu";
 
-export default async function Header() {
-  const user = await getSessionUser();
+interface HeaderProps {
+  user?: {
+    email: string;
+  } | null;
+}
+
+export default async function Header({ user }: HeaderProps) {
+  const raw = user || (await getSessionUser());
+  const resolvedUser = raw && raw.email ? { email: raw.email } : null;
   return (
-    <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+    <header className="border-b sticky top-0 z-50 bg-white md:bg-white/95 md:backdrop-blur supports-[backdrop-filter]:md:bg-white/60 shadow-sm">
       <div className="container mx-auto px-4 md:px-2 h-16 flex items-center justify-between">
+        {/* Logo */}
         <div className="flex items-center space-x-8">
           <Link href="/" className="text-2xl font-bold text-primary">
             EventFlow
           </Link>
+
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link
               href="/events"
@@ -18,29 +31,71 @@ export default async function Header() {
               Browse Events
             </Link>
             {/* <Link
-              href="/create-event"
+              href="/map"
               className="text-sm font-medium hover:text-primary transition-colors"
             >
-              Create Event
+              Map View
             </Link> */}
           </nav>
         </div>
-        <div className="flex items-center space-x-4">
-          {user ? (
+
+        {/* Desktop Actions */}
+        <div className="hidden md:flex items-center space-x-4">
+          {/* Cart Icon */}
+          <Link
+            href="/checkout/1"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ShoppingCart className="h-5 w-5" />
+          </Link>
+
+          {resolvedUser ? (
             <>
-              <span className="text-sm">{user.email}</span>
-              <form action="/api/auth/signout" method="post">
-                <button className="text-sm underline" type="submit">
+              {/* Profile Icon */}
+              <Link
+                href="/me"
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <User className="h-5 w-5" />
+              </Link>
+
+              {/* User Email */}
+              <span className="text-sm text-gray-600">
+                {resolvedUser.email}
+              </span>
+
+              {/* Sign Out */}
+              <form action="/api/signout" method="post">
+                <Button variant="ghost" size="sm" type="submit">
                   Sign Out
-                </button>
+                </Button>
               </form>
             </>
           ) : (
             <>
-              <Link href="/signin">Sign In</Link>
-              <Link href="/signup">Sign Up</Link>
+              <Link href="/signin">
+                <Button variant="ghost" size="sm">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button size="sm">Sign Up</Button>
+              </Link>
             </>
           )}
+        </div>
+
+        {/* Mobile Menu - Cart + Burger */}
+        <div className="md:hidden flex items-center space-x-2">
+          {/* Cart Icon - Always visible on mobile */}
+          <Link
+            href="/checkout/1"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ShoppingCart className="h-5 w-5" />
+          </Link>
+
+          <MobileMenu user={resolvedUser} />
         </div>
       </div>
     </header>

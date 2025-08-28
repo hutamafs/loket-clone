@@ -74,7 +74,6 @@ export default function SignUpPage() {
         window.location.href = "/signin";
       }, 1200);
     } catch (e: unknown) {
-      console.log(e.message);
       toast.error(e instanceof Error ? e.message : "Unexpected error");
     } finally {
       setIsLoading(false);
@@ -206,10 +205,36 @@ export default function SignUpPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-70"
                 disabled={isLoading}
               >
-                {isLoading ? "Creating account..." : "Create Account"}
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="mr-2 h-4 w-4 animate-spin text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      ></path>
+                    </svg>
+                    Creating account...
+                  </span>
+                ) : (
+                  "Create Account"
+                )}
               </Button>
             </form>
 

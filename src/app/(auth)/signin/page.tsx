@@ -43,7 +43,9 @@ export default function SignInPage() {
           toast.error(error.message || "Sign in failed");
         }
       } else {
-        toast.success(`Welcome back${data.user?.email ? ", " + data.user.email : ""}!`);
+        toast.success(
+          `Welcome back${data.user?.email ? ", " + data.user.email : ""}!`
+        );
         // small delay so user sees toast
         setTimeout(() => {
           window.location.href = "/";

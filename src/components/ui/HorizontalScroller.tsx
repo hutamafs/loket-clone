@@ -1,7 +1,7 @@
 // components/ui/HorizontalScroller.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 export default function HorizontalScroller({
   children,
@@ -17,7 +17,7 @@ export default function HorizontalScroller({
   const [canRight, setCanRight] = useState(true);
   const [stepPx, setStepPx] = useState(600); // will be recalculated
 
-  const update = () => {
+  const update = useCallback(() => {
     const el = trackRef.current;
     if (!el) return;
     setCanLeft(el.scrollLeft > 0);
@@ -30,7 +30,7 @@ export default function HorizontalScroller({
       const visible = Math.max(1, Math.floor(el.clientWidth / (cardW + gapPx)));
       setStepPx(visible * (cardW + gapPx));
     }
-  };
+  }, [gapPx]);
 
   useEffect(() => {
     update();

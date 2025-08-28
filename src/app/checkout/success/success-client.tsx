@@ -36,6 +36,9 @@ export default function SuccessClient() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [emailing, setEmailing] = useState(false);
+  const [emailResult, setEmailResult] = useState<string | null>(null);
 
   // Fetch order initially & poll briefly if still pending; use session_id fallback
   useEffect(() => {
@@ -80,6 +83,45 @@ export default function SuccessClient() {
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, order?.id, order?.status]);
+
+  const handleDownload = async () => {
+    if (!order) return;
+    try {
+      setDownloading(true);
+      const res = await fetch(`/api/tickets/${order.id}/download`);
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ticket-${order.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Download failed');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleEmail = async () => {
+    if (!order) return;
+    try {
+      setEmailing(true);
+      setEmailResult(null);
+      const res = await fetch(`/api/tickets/${order.id}/email`, { method:'POST' });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || 'Email failed');
+      setEmailResult('Sent');
+    } catch (e: unknown) {
+      setEmailResult('Failed');
+      setError(e instanceof Error ? e.message : 'Email failed');
+    } finally {
+      setEmailing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -205,23 +247,26 @@ export default function SuccessClient() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button className="flex items-center gap-2">
+            <Button
+              disabled={!order || downloading}
+              onClick={handleDownload}
+              className="flex items-center gap-2"
+            >
               <Download className="h-4 w-4" />
-              Download Tickets
+              {downloading ? 'Preparing…' : 'Download Tickets'}
             </Button>
             <Button
               variant="outline"
+              disabled={!order || emailing}
+              onClick={handleEmail}
               className="flex items-center gap-2 bg-transparent"
             >
               <Mail className="h-4 w-4" />
-              Email Tickets
+              {emailing ? 'Sending…' : emailResult ? `Email Tickets (${emailResult})` : 'Email Tickets'}
             </Button>
           </div>
 
           <div className="mt-8 text-center">
-            <p className="text-sm text-muted-foreground mb-4">
-              Need help? Contact our support team at support@loket.com
-            </p>
             <Link href="/events">
               <Button variant="outline">Browse More Events</Button>
             </Link>

@@ -54,7 +54,13 @@ export async function markOrderPaidBySession(
   sessionId: string,
   totalAmount: number
 ) {
-  const { data, error } = await supabase
+  const client = supabaseAdmin ?? supabase;
+  if (!supabaseAdmin) {
+    console.warn(
+      "[orders] supabaseAdmin not configured (SUPABASE_SERVICE_ROLE_KEY missing). markOrderPaidBySession falling back to anon client; RLS may block update for guest orders."
+    );
+  }
+  const { data, error } = await client
     .from("orders")
     .update({ status: "paid", total_amount: totalAmount })
     .eq("stripe_session_id", sessionId)
@@ -65,7 +71,13 @@ export async function markOrderPaidBySession(
 }
 
 export async function getOrderByStripeSession(sessionId: string) {
-  const { data, error } = await supabase
+  const client = supabaseAdmin ?? supabase;
+  if (!supabaseAdmin) {
+    console.warn(
+      "[orders] supabaseAdmin not configured; getOrderByStripeSession using anon client. RLS will hide guest orders (null user_id)."
+    );
+  }
+  const { data, error } = await client
     .from("orders")
     .select("*")
     .eq("stripe_session_id", sessionId)
@@ -75,7 +87,13 @@ export async function getOrderByStripeSession(sessionId: string) {
 }
 
 export async function getOrderById(id: string) {
-  const { data, error } = await supabase
+  const client = supabaseAdmin ?? supabase;
+  if (!supabaseAdmin) {
+    console.warn(
+      "[orders] supabaseAdmin not configured; getOrderById using anon client. RLS will hide guest orders -> returns null."
+    );
+  }
+  const { data, error } = await client
     .from("orders")
     .select("*")
     .eq("id", id)
@@ -98,7 +116,13 @@ export async function attachStripeSessionToOrder(
   orderId: string,
   sessionId: string
 ) {
-  const { data, error } = await supabase
+  const client = supabaseAdmin ?? supabase;
+  if (!supabaseAdmin) {
+    console.warn(
+      "[orders] supabaseAdmin not configured; attachStripeSessionToOrder using anon client. RLS may block update for guest orders."
+    );
+  }
+  const { data, error } = await client
     .from("orders")
     .update({ stripe_session_id: sessionId })
     .eq("id", orderId)
